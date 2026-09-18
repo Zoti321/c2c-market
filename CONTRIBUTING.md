@@ -1,0 +1,96 @@
+# 贡献与开发流程
+
+本项目采用 **Feature Branch + Pull Request + CI 门禁** 工作流，所有代码变更经 PR 合入 `main`，不直接向主分支推送。
+
+## 工作流概览
+
+```
+规格锁定 → /implement 写代码 → Feature Branch → Push → PR → CI Green → Merge to main
+```
+
+| 阶段 | 术语 | 说明 |
+|------|------|------|
+| 本地开发 | **Feature Branch** | 从 `main` 切出短期功能分支 |
+| 推送 | **Push / Publish Branch** | 推送到远程 `origin` |
+| 发起合并 | **Pull Request (PR)** | 在 GitHub 创建 PR，目标分支为 `main` |
+| 自动化检查 | **CI / Status Checks** | GitHub Actions 运行构建与测试 |
+| 合并门禁 | **CI Gate / Required Checks** | 全部检查通过后才允许合并 |
+| 修复循环 | **Fix → Push → Re-run CI** | 失败则修复并推送，直至 **CI Green** |
+| 合入主分支 | **Merge to main** | PR 合并后删除功能分支（推荐） |
+
+## 标准步骤
+
+### 1. 同步主分支并创建功能分支
+
+```bash
+git checkout main
+git pull origin main
+git checkout -b feature/简短描述
+```
+
+分支命名建议：
+
+- `feature/首页-paging` — 新功能
+- `fix/购物车空态` — 缺陷修复
+- `docs/贡献流程` — 仅文档变更
+
+### 2. 开发与本地验证
+
+```bash
+./gradlew assembleDebug
+./gradlew test
+```
+
+提交信息使用**简体中文**，聚焦「为什么」而非罗列文件。
+
+### 3. 推送并创建 PR
+
+```bash
+git push -u origin feature/简短描述
+gh pr create --title "..." --body "..."
+```
+
+PR 描述应说明：关联的规格 / Issue（如有）、变更摘要、自测情况。
+
+### 4. 等待 CI 通过
+
+- PR 页面查看 **Checks** / **Status Checks**
+- 全部 ✅ 即 **CI Green**，方可合并
+- 若 ❌：**Fix the build** → 推送新 commit → CI 自动重跑；必要时在 Actions 页 **Re-run failed jobs**
+
+### 5. 合并到 main
+
+- 优先使用 **Squash and Merge**（保持 `main` 历史简洁）
+- 合并后删除远程功能分支
+- 本地同步：
+
+```bash
+git checkout main
+git pull origin main
+git branch -d feature/简短描述
+```
+
+## 与路线图的关系
+
+本仓库的 [MVP 路线图 (#1)](https://github.com/Zoti321/c2c-market/issues/1) 跟踪**决策、规格与验收**，不跟踪实现票：
+
+1. **Wayfinder 决策票** — 锁定规格（research / grilling / prototype）
+2. **`/implement`** — 在功能分支上按规格写代码
+3. **PR + CI** — 本文件描述的合并流程
+4. **[MVP 验收 (#11)](https://github.com/Zoti321/c2c-market/issues/11)** — 规格与代码就绪后手工验收
+
+## 分支保护（目标配置）
+
+`main` 分支建议启用 **Branch Protection Rules**：
+
+- 禁止直接 push
+- 合并前必须通过 Required Status Checks
+- （可选）需要 PR Review
+
+> CI Workflow 配置就绪后，在 GitHub 仓库 Settings → Branches 中启用上述规则。
+
+## 相关文档
+
+- [`README.md`](README.md) — 项目总览
+- [`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md) — Issue 与 Wayfinder 约定
+- [`AGENTS.md`](AGENTS.md) — Agent 协作指引
