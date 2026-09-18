@@ -1,5 +1,6 @@
 package com.zoti321.c2cmarket.di
 
+import com.zoti321.c2cmarket.data.remote.FakeStoreApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -10,6 +11,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import retrofit2.create
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -41,4 +43,8 @@ object NetworkModule {
             .addConverterFactory(json.asConverterFactory(contentType))
             .build()
     }
+
+    @Provides
+    @Singleton
+    fun provideFakeStoreApi(retrofit: Retrofit): FakeStoreApi = retrofit.create()
 }
