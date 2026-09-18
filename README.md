@@ -115,7 +115,9 @@ Base URL: `https://fakestoreapi.com/`
 
 ## 开发流程
 
-采用 **Feature Branch → PR → CI Green → Merge to main** 工作流：在功能分支开发，经 Pull Request 合入 `main`，CI 全部通过后方可合并。详见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
+采用 **Feature Branch → PR → CI Green → Merge to main** 工作流：在功能分支开发，经 Pull Request 合入 `main`，CI 全部通过后方可合并。
+
+**当前 MVP 开发分支**：`feature/mvp-roadmap`（文档与代码均提交到此分支）。详见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
 
 ## 快速开始
 

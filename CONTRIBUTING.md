@@ -70,12 +70,37 @@ git pull origin main
 git branch -d feature/简短描述
 ```
 
+## 当前 MVP 开发分支
+
+MVP 阶段的所有变更——**文档、规格落地与 `/implement` 代码**——统一提交到：
+
+```
+feature/mvp-roadmap
+```
+
+| 变更类型 | 示例 | 提交到 |
+|---------|------|--------|
+| 路线图 / 工作流文档 | `CONTRIBUTING.md`、README 路线图链接 | `feature/mvp-roadmap` |
+| 规格产出 | research 文档、设计原型、ADR 补充 | `feature/mvp-roadmap` |
+| MVP 功能代码 | FakeStore、Paging、Room、结算等 | `feature/mvp-roadmap` |
+
+```bash
+git checkout feature/mvp-roadmap
+git pull origin feature/mvp-roadmap   # 首次推送后
+# 开发、commit…
+git push origin feature/mvp-roadmap
+```
+
+MVP 全部完成并通过 [#11 验收](https://github.com/Zoti321/c2c-market/issues/11) 后，将 `feature/mvp-roadmap` 以 **一个 PR** 合入 `main`（或按模块拆分为多个 PR，由你决定）。
+
+> 不要在 `main` 上直接开发 MVP；`main` 保持可发布基线。
+
 ## 与路线图的关系
 
 本仓库的 [MVP 路线图 (#1)](https://github.com/Zoti321/c2c-market/issues/1) 跟踪**决策、规格与验收**，不跟踪实现票：
 
 1. **Wayfinder 决策票** — 锁定规格（research / grilling / prototype）
-2. **`/implement`** — 在功能分支上按规格写代码
+2. **`/implement`** — 在 `feature/mvp-roadmap` 上按规格写代码
 3. **PR + CI** — 本文件描述的合并流程
 4. **[MVP 验收 (#11)](https://github.com/Zoti321/c2c-market/issues/11)** — 规格与代码就绪后手工验收
 

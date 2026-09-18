@@ -10,4 +10,4 @@ Single-context layout: root `CONTEXT.md` + `docs/adr/`. See `docs/agents/domain.
 
 ### Git workflow
 
-Feature Branch → PR → CI Green → Merge to `main`. Code changes go through PR; do not push directly to `main`. See `CONTRIBUTING.md`.
+Feature Branch → PR → CI Green → Merge to `main`. Code changes go through PR; do not push directly to `main`. MVP work (docs + code) goes on `feature/mvp-roadmap`. See `CONTRIBUTING.md`.
