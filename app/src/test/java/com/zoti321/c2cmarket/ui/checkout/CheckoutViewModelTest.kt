@@ -1,5 +1,6 @@
 package com.zoti321.c2cmarket.ui.checkout
 
+import app.cash.turbine.test
 import com.zoti321.c2cmarket.domain.model.Address
 import com.zoti321.c2cmarket.domain.model.CartItem
 import com.zoti321.c2cmarket.domain.model.Order
@@ -14,7 +15,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -29,9 +32,11 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class CheckoutViewModelTest {
 
+    private val dispatcher = UnconfinedTestDispatcher()
+
     @Before
     fun setUp() {
-        Dispatchers.setMain(UnconfinedTestDispatcher())
+        Dispatchers.setMain(dispatcher)
     }
 
     @After
@@ -40,7 +45,7 @@ class CheckoutViewModelTest {
     }
 
     @Test
-    fun canPlaceOrder_false_whenNoAddress() = runTest {
+    fun canPlaceOrder_false_whenNoAddress() = runTest(dispatcher) {
         val viewModel = CheckoutViewModel(
             cartRepository = FakeCartRepository(),
             addressRepository = FakeAddressRepository(emptyList()),
@@ -50,7 +55,7 @@ class CheckoutViewModelTest {
     }
 
     @Test
-    fun selectAddress_updatesSelectedAddressId() = runTest {
+    fun selectAddress_updatesSelectedAddressId() = runTest(dispatcher) {
         val address = sampleAddress()
         val viewModel = CheckoutViewModel(
             cartRepository = FakeCartRepository(),
@@ -59,6 +64,22 @@ class CheckoutViewModelTest {
         )
         viewModel.selectAddress(address.id)
         assertEquals(address.id, viewModel.selectedAddressId.value)
+    }
+
+    @Test
+    fun placeOrder_withAddress_emitsOrderPlaced() = runTest(dispatcher) {
+        val address = sampleAddress()
+        val viewModel = CheckoutViewModel(
+            cartRepository = FakeCartRepository(),
+            addressRepository = FakeAddressRepository(listOf(address)),
+            orderRepository = FakeOrderRepository(),
+        )
+        backgroundScope.launch { viewModel.selectedAddress.collect { } }
+
+        viewModel.events.test {
+            viewModel.placeOrder()
+            assertEquals(CheckoutEvent.OrderPlaced(1L), awaitItem())
+        }
     }
 
     private fun sampleAddress() = Address(
@@ -103,7 +124,9 @@ private class FakeAddressRepository(
 
     override fun observeAll(): Flow<List<Address>> = state
 
-    override fun observeDefault(): Flow<Address?> = flowOf(state.value.firstOrNull { it.isDefault })
+    override fun observeDefault(): Flow<Address?> = flow {
+        emit(state.value.firstOrNull { it.isDefault })
+    }
 
     override suspend fun getById(id: Long) = Result.success(state.value.first { it.id == id })
 

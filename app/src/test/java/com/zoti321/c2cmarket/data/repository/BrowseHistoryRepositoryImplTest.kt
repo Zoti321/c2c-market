@@ -51,6 +51,20 @@ class BrowseHistoryRepositoryImplTest {
         repository.clearAll()
         assertTrue(repository.observeRecent().first().isEmpty())
     }
+
+    @Test
+    fun recordView_trimsToMax50() = runTest {
+        repeat(55) { index ->
+            repository.recordView(
+                product.copy(
+                    id = index + 1,
+                    title = "Product $index",
+                ),
+            )
+        }
+
+        assertEquals(50, repository.observeRecent().first().size)
+    }
 }
 
 private class FakeBrowseHistoryDao : BrowseHistoryDao {
@@ -59,6 +73,7 @@ private class FakeBrowseHistoryDao : BrowseHistoryDao {
     override suspend fun upsert(item: BrowseHistoryEntity) {
         val updated = items.value.filterNot { it.productId == item.productId } + item
         items.value = updated.sortedByDescending { it.viewedAt }
+        trimToMax(50)
     }
 
     override fun observeRecent(): Flow<List<BrowseHistoryEntity>> = items.asStateFlow()
