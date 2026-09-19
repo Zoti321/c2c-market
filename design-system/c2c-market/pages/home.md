@@ -4,16 +4,17 @@
 > **Overrides:** [`MASTER.md`](../MASTER.md)  
 > **Wireframe:** [`docs/design/c2c-mvp-ui-prototype.md`](../../../docs/design/c2c-mvp-ui-prototype.md)
 
-## MVP 适配说明
+## MVP / v2.1 适配说明
 
-- MASTER 默认「搜索为主 CTA」—— **MVP 不做搜索**（见 mvp-scope）；首页首屏即 **2 列商品网格**
-- 增加 **Trust 条**：列表底部 `labelSmall`「商品数据来自 FakeStore」（反模式：No trust cues）
+- **v2.1 起**：TopAppBar **actions** 增加搜索图标 → push [`search.md`](search.md) 全屏搜索页
+- 首屏仍为 **2 列商品网格**（非 Hero 搜索为主 CTA）
+- 增加 **Trust 条**：列表底部 `labelSmall`「商品数据来自 FakeStore」
 
 ## Layout
 
-- `Scaffold` + `TopAppBar`「首页」`CenterAligned`
+- `Scaffold` + `TopAppBar`「首页」`CenterAligned` + **Search action**（v2.1）
 - `LazyVerticalGrid` `GridCells.Fixed(2)`，contentPadding 16dp，gap 8dp
-- 无 Hero、无搜索栏
+- 无 Hero、TopAppBar 内嵌 SearchBar（搜索在独立页）
 
 ## Components
 
