@@ -42,7 +42,7 @@
 
 **路线图**（[#19](https://github.com/Zoti321/c2c-market/issues/19)）跟踪**决策、规格与验收**；代码在规格锁定后用 `/implement` 执行（路线图不挂实现票）。
 
-- [ ] v2.1 搜索 + 浏览历史
+- [x] v2.1 搜索 + 浏览历史（规格已锁定，见 [`docs/spec/v2.1-search-browsing-history.md`](docs/spec/v2.1-search-browsing-history.md)）
 - [ ] v2.2 发布挂牌（相册选图 + 本地 URI）
 - [ ] v2.3 地址 CRUD
 - [ ] v2.4 WorkManager + 通知
