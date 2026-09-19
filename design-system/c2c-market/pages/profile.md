@@ -10,7 +10,8 @@
 2. **v2.1** 最近浏览 LazyRow（有数据时）
 3. **v2.2** `FilledTonalButton`「发布挂牌」全宽，horizontal padding 16dp
 4. **v2.2** 「我的挂牌」列表（有数据时；ListItem + 删除）
-5. 「我的订单」区块（MVP）
+5. **v2.3** ListItem「收货地址」→ 地址列表
+6. 「我的订单」区块（MVP）
 
 ## 挂牌 ListItem
 
