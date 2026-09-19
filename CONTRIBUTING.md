@@ -38,8 +38,11 @@ git checkout -b feature/简短描述
 
 ```bash
 ./gradlew assembleDebug
-./gradlew test
+./gradlew test                              # JVM 单测（CI 门禁）
+./gradlew connectedDebugAndroidTest        # Compose 冒烟（推荐 PR 前手工）
 ```
+
+测试范围见 [`docs/spec/v2.5-testing.md`](docs/spec/v2.5-testing.md)。
 
 提交信息使用**简体中文**，聚焦「为什么」而非罗列文件。
 
