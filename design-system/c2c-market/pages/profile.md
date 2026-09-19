@@ -2,7 +2,7 @@
 
 > **PROJECT:** C2C Market · **Platform:** Jetpack Compose  
 > **Overrides:** [`MASTER.md`](../MASTER.md)  
-> **Spec:** MVP 订单 + [v2.1 浏览历史](../../../docs/spec/v2.1-search-browsing-history.md) + [v2.2 挂牌](../../../docs/spec/v2.2-local-listings.md)
+> **Spec:** MVP 订单 + [v2.1 浏览历史](https://github.com/Zoti321/c2c-market/issues/21) + [v2.2 挂牌](https://github.com/Zoti321/c2c-market/issues/22) + [v2.3 地址](https://github.com/Zoti321/c2c-market/issues/23)
 
 ## Layout（自上而下）
 

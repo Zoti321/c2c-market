@@ -2,7 +2,7 @@
 
 > **PROJECT:** C2C Market · **Platform:** Android Jetpack Compose  
 > **Overrides:** [`MASTER.md`](../MASTER.md)  
-> **Spec:** [`docs/spec/v2.2-local-listings.md`](../../../docs/spec/v2.2-local-listings.md)
+> **Spec:** [约定 v2.2 发布挂牌规格](https://github.com/Zoti321/c2c-market/issues/22)
 
 ## Layout
 

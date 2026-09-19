@@ -1,6 +1,6 @@
 # Address Form Page Overrides
 
-> **Spec:** [`docs/spec/v2.3-address-crud.md`](../../../docs/spec/v2.3-address-crud.md)
+> **Spec:** [约定 v2.3 收货地址 CRUD 与结算集成规格](https://github.com/Zoti321/c2c-market/issues/23)
 
 ## Layout
 

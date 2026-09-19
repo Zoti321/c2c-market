@@ -2,7 +2,7 @@
 
 > **PROJECT:** C2C Market · **Platform:** Android Jetpack Compose  
 > **Overrides:** [`MASTER.md`](../MASTER.md)  
-> **Spec:** [`docs/spec/v2.1-search-browsing-history.md`](../../../docs/spec/v2.1-search-browsing-history.md)
+> **Spec:** [约定 v2.1 搜索与浏览历史规格](https://github.com/Zoti321/c2c-market/issues/21)
 
 ## Layout
 

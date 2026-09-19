@@ -42,12 +42,12 @@
 
 **路线图**（[#19](https://github.com/Zoti321/c2c-market/issues/19)）跟踪**决策、规格与验收**；代码在规格锁定后用 `/implement` 执行（路线图不挂实现票）。
 
-- [x] v2.1 搜索 + 浏览历史（规格已锁定，见 [`docs/spec/v2.1-search-browsing-history.md`](docs/spec/v2.1-search-browsing-history.md)）
-- [x] v2.2 发布挂牌（规格已锁定，见 [`docs/spec/v2.2-local-listings.md`](docs/spec/v2.2-local-listings.md)）
-- [x] v2.3 地址 CRUD（规格已锁定，见 [`docs/spec/v2.3-address-crud.md`](docs/spec/v2.3-address-crud.md)）
-- [x] v2.4 WorkManager + 通知（规格已锁定，见 [`docs/spec/v2.4-workmanager-notifications.md`](docs/spec/v2.4-workmanager-notifications.md)）
-- [x] v2.5 测试（规格已锁定，见 [`docs/spec/v2.5-testing.md`](docs/spec/v2.5-testing.md)）
-- [x] v2.6 Release + R8（规格已锁定，见 [`docs/spec/v2.6-release.md`](docs/spec/v2.6-release.md)）
+- [x] v2.1 搜索 + 浏览历史（[约定 v2.1 搜索与浏览历史规格](https://github.com/Zoti321/c2c-market/issues/21)）
+- [x] v2.2 发布挂牌（[约定 v2.2 发布挂牌规格](https://github.com/Zoti321/c2c-market/issues/22)）
+- [x] v2.3 地址 CRUD（[约定 v2.3 收货地址 CRUD 与结算集成规格](https://github.com/Zoti321/c2c-market/issues/23)）
+- [x] v2.4 WorkManager + 通知（[约定 v2.4 WorkManager 与本地通知规格](https://github.com/Zoti321/c2c-market/issues/24)）
+- [x] v2.5 测试（[约定 v2.5 测试范围与策略规格](https://github.com/Zoti321/c2c-market/issues/25)）
+- [x] v2.6 Release + R8（[约定 v2.6 Release、R8 与 CI 规格](https://github.com/Zoti321/c2c-market/issues/26)）
 
 ### v3（可选）
 

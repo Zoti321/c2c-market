@@ -42,7 +42,7 @@ git checkout -b feature/简短描述
 ./gradlew connectedDebugAndroidTest        # Compose 冒烟（推荐 PR 前手工）
 ```
 
-测试范围见 [`docs/spec/v2.5-testing.md`](docs/spec/v2.5-testing.md)。
+测试范围见 [约定 v2.5 测试范围与策略规格](https://github.com/Zoti321/c2c-market/issues/25)（Issue comment 全文）。
 
 提交信息使用**简体中文**，聚焦「为什么」而非罗列文件。
 
@@ -102,8 +102,8 @@ v2 全部完成并通过各切片验收后，将 `feature/v2` 以 **一个 PR** 
 
 MVP 已合入 `main`（[#1](https://github.com/Zoti321/c2c-market/issues/1) 关闭、[#11](https://github.com/Zoti321/c2c-market/issues/11) 验收通过）。当前 [v2 路线图 (#19)](https://github.com/Zoti321/c2c-market/issues/19) 跟踪**决策、规格与验收**，不跟踪实现票：
 
-1. **Wayfinder 决策票** — 锁定各切片规格（research / grilling / prototype）
-2. **`/implement`** — 在 `feature/v2` 上按规格写代码
+1. **Wayfinder 决策票** — 锁定各切片规格（全文在 **GitHub Issue comment**，见 [`issue-tracker.md`](docs/agents/issue-tracker.md)）
+2. **`/implement`** — 在 `feature/v2` 上按 Issue 规格写代码；可选将定稿同步到 `docs/spec/`
 3. **PR + CI** — v2 全部完成后开一个 PR 合入 `main`
 4. **验收票** — 各切片代码就绪后手工验收
 
@@ -115,7 +115,7 @@ MVP 已合入 `main`（[#1](https://github.com/Zoti321/c2c-market/issues/1) 关�
 - 合并前必须通过 Required Status Checks
 - （可选）需要 PR Review
 
-> v2.6 起 CI 见 [`.github/workflows/android-ci.yml`](.github/workflows/android-ci.yml)（`test` + `assembleDebug`）。Release 签名见 [`keystore.properties.example`](keystore.properties.example) 与 [`docs/spec/v2.6-release.md`](docs/spec/v2.6-release.md)。
+> v2.6 起 CI 见 [`.github/workflows/android-ci.yml`](.github/workflows/android-ci.yml)（`test` + `assembleDebug`）。Release 签名见 [`keystore.properties.example`](keystore.properties.example) 与 [约定 v2.6 Release、R8 与 CI 规格](https://github.com/Zoti321/c2c-market/issues/26)。
 
 ## 相关文档
 
