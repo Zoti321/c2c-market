@@ -45,7 +45,7 @@
 - [x] v2.1 搜索 + 浏览历史（规格已锁定，见 [`docs/spec/v2.1-search-browsing-history.md`](docs/spec/v2.1-search-browsing-history.md)）
 - [x] v2.2 发布挂牌（规格已锁定，见 [`docs/spec/v2.2-local-listings.md`](docs/spec/v2.2-local-listings.md)）
 - [x] v2.3 地址 CRUD（规格已锁定，见 [`docs/spec/v2.3-address-crud.md`](docs/spec/v2.3-address-crud.md)）
-- [ ] v2.4 WorkManager + 通知
+- [x] v2.4 WorkManager + 通知（规格已锁定，见 [`docs/spec/v2.4-workmanager-notifications.md`](docs/spec/v2.4-workmanager-notifications.md)）
 - [ ] v2.5 测试
 - [ ] v2.6 Release + R8
 
