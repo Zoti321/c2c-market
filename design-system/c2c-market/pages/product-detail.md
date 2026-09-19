@@ -14,7 +14,7 @@
 1. Hero 图 4:3，`ContentScale.Crop`
 2. **价格** — `titleLarge` bold，`#16A34A`（accent）
 3. 标题 — `titleMedium`，`#0F172A`
-4. 分类 Chip + rating 行 — `bodySmall`，muted `#475569`
+4. 分类 Chip + rating 行 — `bodySmall`，muted `#475569`（**v2.2 挂牌**：显示「本地挂牌」Chip，**隐藏** rating）
 5. 描述 — `bodyMedium`，段落间距 8dp
 
 ## Actions (bottomBar)

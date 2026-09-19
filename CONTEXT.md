@@ -5,7 +5,7 @@
 ## Language
 
 **商品**：
-可浏览、可加入购物车的在售条目；远程数据来自 FakeStore API，展示标题、价格、图片与分类。
+可浏览、可加入购物车的在售条目；来源为 FakeStore（Remote，id 为正）或本地**挂牌**（LocalListing，id 为负）；统一 `Product` 模型展示。
 _Avoid_: 产品（泛指 App 本身时）、SKU
 
 **分类**：

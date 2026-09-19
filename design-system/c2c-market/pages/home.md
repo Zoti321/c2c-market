@@ -13,6 +13,7 @@
 ## Layout
 
 - `Scaffold` + `TopAppBar`「首页」`CenterAligned` + **Search action**（v2.1）
+- **v2.2**：有本地挂牌时，网格 **前若干项** 为挂牌 `ProductCard`（带「本地挂牌」小 Chip），其余为 FakeStore Paging
 - `LazyVerticalGrid` `GridCells.Fixed(2)`，contentPadding 16dp，gap 8dp
 - 无 Hero、TopAppBar 内嵌 SearchBar（搜索在独立页）
 
