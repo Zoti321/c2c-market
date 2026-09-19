@@ -36,7 +36,7 @@
 - [x] 买家闭环：首页 Paging → 分类 → 详情 → Room 购物车/收藏 → Mock 结算 → 订单（PR #18）
 - [x] [MVP 验收 (#11)](https://github.com/Zoti321/c2c-market/issues/11)
 
-规格见 [`docs/spec/mvp-scope.md`](docs/spec/mvp-scope.md)。
+规格见 [锁定 MVP 功能边界与验收标准](https://github.com/Zoti321/c2c-market/issues/5)（Issue comment 全文）。
 
 ### v2（当前阶段）
 

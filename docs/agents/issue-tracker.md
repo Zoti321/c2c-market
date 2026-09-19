@@ -46,12 +46,12 @@ Used by `/wayfinder`. The **map** is a single issue with **child** issues as tic
 
 ## Where specs live
 
-| 阶段 | 规格存放处 | 说明 |
-|------|------------|------|
-| **Wayfinder / 规划** | **GitHub Issue**（Resolution comment 内 `## Specification (canonical)` 全文） | **不在** `docs/spec/` 写 v2 切片规格 |
-| **Implement / PR** | 可选：定稿后同步到 `docs/spec/` 与代码同 PR 合入 | MVP 的 [`mvp-scope.md`](../spec/mvp-scope.md) 即此模式 |
-| **持久架构** | [`docs/adr/`](../adr/) | ADR 可引用 Issue，正文简短 |
+| 类型 | 存放处 | 说明 |
+|------|--------|------|
+| **功能规格**（MVP / v2 切片） | **GitHub Issue** — comment 内 `## Specification (canonical)` 全文 | **不在** 仓库 `docs/spec/` 维护 |
+| **架构决策** | [`docs/adr/`](../adr/) | 简短；可链 Issue |
+| **设计** | [`design-system/`](../design/)、`docs/design/` | 可链 Issue |
 
-读取 v2 规格：`gh issue view <n> --comments`（取最新 canonical comment）。
+读取规格：`gh issue view <n> --comments`（取 canonical comment）。
 
-地图 **Decisions so far** 只链 Issue 标题，不链 `blob/.../docs/spec/`。
+地图 **Decisions so far** 只链 Issue 标题，不链仓库内 spec 文件。
