@@ -21,7 +21,6 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -40,6 +39,10 @@ import coil3.compose.AsyncImage
 import com.zoti321.c2cmarket.R
 import com.zoti321.c2cmarket.domain.model.CartItem
 import com.zoti321.c2cmarket.ui.common.EmptyContent
+import com.zoti321.c2cmarket.ui.common.ErrorContent
+import com.zoti321.c2cmarket.ui.common.LoadingContent
+import com.zoti321.c2cmarket.ui.common.UiState
+import com.zoti321.c2cmarket.ui.common.userMessage
 import com.zoti321.c2cmarket.ui.theme.DestructiveRed
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,9 +53,11 @@ fun CartScreen(
     modifier: Modifier = Modifier,
     viewModel: CartViewModel = hiltViewModel(),
 ) {
-    val items by viewModel.items.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val totalPrice by viewModel.totalPrice.collectAsStateWithLifecycle()
-    val isEmpty by viewModel.isEmpty.collectAsStateWithLifecycle()
+
+    val items = (uiState as? UiState.Success)?.data.orEmpty()
+    val showBottomBar = uiState is UiState.Success && items.isNotEmpty()
 
     Scaffold(
         modifier = modifier,
@@ -62,7 +67,7 @@ fun CartScreen(
             )
         },
         bottomBar = {
-            if (!isEmpty) {
+            if (showBottomBar) {
                 CartBottomBar(
                     totalPrice = totalPrice,
                     onCheckout = onCheckout,
@@ -70,28 +75,38 @@ fun CartScreen(
             }
         },
     ) { innerPadding ->
-        if (isEmpty) {
-            EmptyContent(
-                icon = Icons.Outlined.ShoppingCart,
-                message = stringResource(R.string.cart_empty),
-                actionLabel = stringResource(R.string.cart_go_home),
-                onAction = onGoHome,
+        when (val state = uiState) {
+            is UiState.Loading -> LoadingContent(Modifier.padding(innerPadding))
+            is UiState.Error -> ErrorContent(
+                message = state.throwable.userMessage(),
+                onRetry = viewModel::retry,
                 modifier = Modifier.padding(innerPadding),
             )
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-            ) {
-                items(items, key = { it.productId }) { item ->
-                    CartItemRow(
-                        item = item,
-                        onIncrement = { viewModel.increment(item.productId, item.quantity) },
-                        onDecrement = { viewModel.decrement(item.productId, item.quantity) },
-                        onRemove = { viewModel.removeItem(item.productId) },
+            is UiState.Success -> {
+                if (state.data.isEmpty()) {
+                    EmptyContent(
+                        icon = Icons.Outlined.ShoppingCart,
+                        message = stringResource(R.string.cart_empty),
+                        actionLabel = stringResource(R.string.cart_go_home),
+                        onAction = onGoHome,
+                        modifier = Modifier.padding(innerPadding),
                     )
-                    HorizontalDivider()
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding),
+                    ) {
+                        items(state.data, key = { it.productId }) { item ->
+                            CartItemRow(
+                                item = item,
+                                onIncrement = { viewModel.increment(item.productId, item.quantity) },
+                                onDecrement = { viewModel.decrement(item.productId, item.quantity) },
+                                onRemove = { viewModel.removeItem(item.productId) },
+                            )
+                            HorizontalDivider()
+                        }
+                    }
                 }
             }
         }

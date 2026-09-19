@@ -11,7 +11,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.BrokenImage
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,20 +26,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import com.zoti321.c2cmarket.R
 import com.zoti321.c2cmarket.ui.category.categoryDisplayName
 import com.zoti321.c2cmarket.ui.common.ErrorContent
 import com.zoti321.c2cmarket.ui.common.LoadingContent
 import com.zoti321.c2cmarket.ui.product.components.ProductDetailBottomBar
+import com.zoti321.c2cmarket.ui.product.components.ProductHeroImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -112,13 +109,9 @@ fun ProductDetailScreen(
                         .padding(innerPadding)
                         .verticalScroll(rememberScrollState()),
                 ) {
-                    AsyncImage(
-                        model = product.imageUrl,
+                    ProductHeroImage(
+                        imageUrl = product.imageUrl,
                         contentDescription = product.title,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(4f / 3f),
-                        contentScale = ContentScale.Crop,
                     )
                     Text(
                         text = stringResource(R.string.price_format, product.price),

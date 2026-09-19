@@ -10,7 +10,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.PersonOutline
 import androidx.compose.material.icons.outlined.ReceiptLong
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -29,10 +28,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zoti321.c2cmarket.R
-import com.zoti321.c2cmarket.domain.model.displayOrderNumber
 import com.zoti321.c2cmarket.domain.model.OrderSummary
+import com.zoti321.c2cmarket.domain.model.displayOrderNumber
 import com.zoti321.c2cmarket.ui.common.EmptyContent
+import com.zoti321.c2cmarket.ui.common.ErrorContent
+import com.zoti321.c2cmarket.ui.common.LoadingContent
+import com.zoti321.c2cmarket.ui.common.UiState
 import com.zoti321.c2cmarket.ui.common.formatOrderDateTime
+import com.zoti321.c2cmarket.ui.common.userMessage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,8 +44,7 @@ fun ProfileScreen(
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
-    val orders by viewModel.orders.collectAsStateWithLifecycle()
-    val isEmpty by viewModel.isEmpty.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         modifier = modifier,
@@ -52,33 +54,43 @@ fun ProfileScreen(
             )
         },
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-        ) {
-            item { GuestBanner() }
-            if (isEmpty) {
-                item {
-                    EmptyContent(
-                        icon = Icons.Outlined.ReceiptLong,
-                        message = stringResource(R.string.order_empty),
-                    )
-                }
-            } else {
-                item {
-                    Text(
-                        text = stringResource(R.string.profile_orders_section),
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    )
-                }
-                items(orders, key = { it.id }) { order ->
-                    OrderCard(
-                        order = order,
-                        onClick = { onOrderClick(order.id) },
-                    )
-                    HorizontalDivider()
+        when (val state = uiState) {
+            is UiState.Loading -> LoadingContent(Modifier.padding(innerPadding))
+            is UiState.Error -> ErrorContent(
+                message = state.throwable.userMessage(),
+                onRetry = viewModel::retry,
+                modifier = Modifier.padding(innerPadding),
+            )
+            is UiState.Success -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                ) {
+                    item { GuestBanner() }
+                    if (state.data.isEmpty()) {
+                        item {
+                            EmptyContent(
+                                icon = Icons.Outlined.ReceiptLong,
+                                message = stringResource(R.string.order_empty),
+                            )
+                        }
+                    } else {
+                        item {
+                            Text(
+                                text = stringResource(R.string.profile_orders_section),
+                                style = MaterialTheme.typography.titleSmall,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            )
+                        }
+                        items(state.data, key = { it.id }) { order ->
+                            OrderCard(
+                                order = order,
+                                onClick = { onOrderClick(order.id) },
+                            )
+                            HorizontalDivider()
+                        }
+                    }
                 }
             }
         }
