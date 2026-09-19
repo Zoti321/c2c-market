@@ -115,7 +115,7 @@ MVP 已合入 `main`（[#1](https://github.com/Zoti321/c2c-market/issues/1) 关�
 - 合并前必须通过 Required Status Checks
 - （可选）需要 PR Review
 
-> CI Workflow 配置就绪后，在 GitHub 仓库 Settings → Branches 中启用上述规则。
+> v2.6 起 CI 见 [`.github/workflows/android-ci.yml`](.github/workflows/android-ci.yml)（`test` + `assembleDebug`）。Release 签名见 [`keystore.properties.example`](keystore.properties.example) 与 [`docs/spec/v2.6-release.md`](docs/spec/v2.6-release.md)。
 
 ## 相关文档
 

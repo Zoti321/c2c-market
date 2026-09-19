@@ -47,7 +47,7 @@
 - [x] v2.3 地址 CRUD（规格已锁定，见 [`docs/spec/v2.3-address-crud.md`](docs/spec/v2.3-address-crud.md)）
 - [x] v2.4 WorkManager + 通知（规格已锁定，见 [`docs/spec/v2.4-workmanager-notifications.md`](docs/spec/v2.4-workmanager-notifications.md)）
 - [x] v2.5 测试（规格已锁定，见 [`docs/spec/v2.5-testing.md`](docs/spec/v2.5-testing.md)）
-- [ ] v2.6 Release + R8
+- [x] v2.6 Release + R8（规格已锁定，见 [`docs/spec/v2.6-release.md`](docs/spec/v2.6-release.md)）
 
 ### v3（可选）
 
