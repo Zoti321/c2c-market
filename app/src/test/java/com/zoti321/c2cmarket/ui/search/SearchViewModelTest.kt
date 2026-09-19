@@ -57,6 +57,35 @@ class SearchViewModelTest {
     }
 
     @Test
+    fun submitSearch_emitsSuccessImmediately() = runTest {
+        server.enqueue(
+            MockResponse().setBody(
+                """
+                [
+                  {
+                    "id": 1,
+                    "title": "Phone Case",
+                    "price": 9.99,
+                    "description": "Desc",
+                    "category": "electronics",
+                    "image": "https://example.com/img.png",
+                    "rating": { "rate": 4.5, "count": 10 }
+                  }
+                ]
+                """.trimIndent(),
+            ),
+        )
+        val viewModel = createViewModel()
+        viewModel.searchResult.test {
+            assertEquals(SearchResult.Idle, awaitItem())
+            viewModel.submitSearch("phone")
+            assertEquals(SearchResult.Loading, awaitItem())
+            val result = awaitItem()
+            assertTrue(result is SearchResult.Success)
+        }
+    }
+
+    @Test
     fun queryWithMatch_emitsSuccess() = runTest {
         server.enqueue(
             MockResponse().setBody(
