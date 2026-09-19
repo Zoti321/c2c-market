@@ -117,7 +117,7 @@ Base URL: `https://fakestoreapi.com/`
 
 采用 **Feature Branch → PR → CI Green → Merge to main** 工作流：在功能分支开发，经 Pull Request 合入 `main`，CI 全部通过后方可合并。
 
-从 `main` 切短期功能分支（如 `feature/v2.1-search`），经 PR 合入 `main`。详见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
+**当前 v2 开发分支**：`feature/v2`（文档与代码均提交到此分支，v2 全部完成后再开 PR 合入 `main`）。详见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
 
 ## 快速开始
 

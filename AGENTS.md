@@ -10,4 +10,4 @@ Single-context layout: root `CONTEXT.md` + `docs/adr/`. See `docs/agents/domain.
 
 ### Git workflow
 
-Feature Branch → PR → CI Green → Merge to `main`. Code changes go through PR; do not push directly to `main`. v2 work uses short-lived branches from `main` (e.g. `feature/v2.1-search`). See `CONTRIBUTING.md` and roadmap [#19](https://github.com/Zoti321/c2c-market/issues/19).
+Feature Branch → PR → CI Green → Merge to `main`. Code changes go through PR; do not push directly to `main`. v2 work (docs + code) goes on `feature/v2`; open one PR when v2 is complete. See `CONTRIBUTING.md` and roadmap [#19](https://github.com/Zoti321/c2c-market/issues/19).
