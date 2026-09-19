@@ -33,7 +33,7 @@ class FakeStoreProductRepositoryTest {
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
         val api: FakeStoreApi = retrofit.create()
-        repository = FakeStoreProductRepository(api)
+        repository = FakeStoreProductRepository(api, FakeListingRepository())
     }
 
     @After

@@ -8,4 +8,5 @@ data class Product(
     val category: Category,
     val imageUrl: String,
     val rating: Rating,
+    val source: ProductSource = ProductSource.REMOTE,
 )

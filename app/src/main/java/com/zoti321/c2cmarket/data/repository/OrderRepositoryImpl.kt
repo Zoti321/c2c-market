@@ -11,7 +11,11 @@ import com.zoti321.c2cmarket.domain.GuestSession
 import com.zoti321.c2cmarket.domain.model.Order
 import com.zoti321.c2cmarket.domain.model.OrderStatus
 import com.zoti321.c2cmarket.domain.model.OrderSummary
+import com.zoti321.c2cmarket.domain.model.ShippingInfo
+import com.zoti321.c2cmarket.domain.model.displayOrderNumber
 import com.zoti321.c2cmarket.domain.repository.OrderRepository
+import com.zoti321.c2cmarket.domain.scheduler.OrderNotificationScheduler
+import com.zoti321.c2cmarket.notification.NotificationHelper
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -22,9 +26,11 @@ import kotlinx.coroutines.flow.first
 class OrderRepositoryImpl @Inject constructor(
     private val orderDao: OrderDao,
     private val cartDao: CartDao,
+    private val notificationHelper: NotificationHelper,
+    private val orderNotificationScheduler: OrderNotificationScheduler,
 ) : OrderRepository {
 
-    override suspend fun placeOrder(): Result<Order> = runCatching {
+    override suspend fun placeOrder(shipping: ShippingInfo): Result<Order> = runCatching {
         val cartItems = cartDao.observeAll().first()
         if (cartItems.isEmpty()) throw EmptyCartException()
 
@@ -36,6 +42,9 @@ class OrderRepositoryImpl @Inject constructor(
             totalAmount = total,
             status = OrderStatus.COMPLETED.name,
             createdAt = now,
+            shippingReceiverName = shipping.receiverName,
+            shippingPhone = shipping.phone,
+            shippingAddress = shipping.address,
         )
 
         val lineEntities = cartItems.map { cart ->
@@ -51,7 +60,13 @@ class OrderRepositoryImpl @Inject constructor(
 
         val orderId = orderDao.placeOrderWithClearCart(orderEntity, lineEntities)
         val lineItems = lineEntities.map { it.copy(orderId = orderId) }
-        orderEntity.copy(id = orderId).toDomain(lineItems)
+        val order = orderEntity.copy(id = orderId).toDomain(lineItems)
+
+        if (notificationHelper.hasNotificationPermission()) {
+            orderNotificationScheduler.schedule(orderId, order.displayOrderNumber())
+        }
+
+        order
     }
 
     override fun observeOrders(): Flow<List<OrderSummary>> =

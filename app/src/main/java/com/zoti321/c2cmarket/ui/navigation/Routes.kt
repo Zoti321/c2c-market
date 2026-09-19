@@ -8,6 +8,8 @@ object Routes {
     const val CART = "cart"
     const val PROFILE = "profile"
 
+    const val SEARCH = "search"
+
     const val PRODUCT = "product/{id}"
     const val PRODUCT_ID_ARG = "id"
     fun product(id: Int) = "product/$id"
@@ -17,6 +19,17 @@ object Routes {
     const val ORDER = "order/{id}"
     const val ORDER_ID_ARG = "id"
     fun order(id: Long) = "order/$id"
+
+    const val CREATE_LISTING = "listing/create"
+    const val EDIT_LISTING = "listing/edit/{catalogId}"
+    const val LISTING_CATALOG_ID_ARG = "catalogId"
+    fun editListing(catalogId: Int) = "listing/edit/$catalogId"
+
+    const val ADDRESS_LIST = "addresses"
+    const val ADDRESS_CREATE = "addresses/create"
+    const val ADDRESS_EDIT = "addresses/edit/{addressId}"
+    const val ADDRESS_ID_ARG = "addressId"
+    fun editAddress(addressId: Long) = "addresses/edit/$addressId"
 
     object Category {
         const val LIST = "category/list"

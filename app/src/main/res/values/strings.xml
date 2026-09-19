@@ -68,4 +68,56 @@
     <string name="price_format">$%1$.2f</string>
     <string name="quantity_format">x%1$d</string>
     <string name="rating_format">★ %1$.1f (%2$d)</string>
+
+    <!-- Search -->
+    <string name="search_title">搜索</string>
+    <string name="search_hint">输入商品名称</string>
+    <string name="search_idle">输入商品名称搜索</string>
+    <string name="search_empty">未找到相关商品</string>
+
+    <!-- Browse history -->
+    <string name="browse_history_title">最近浏览</string>
+    <string name="browse_history_clear">清空</string>
+
+    <!-- Listing -->
+    <string name="listing_create_button">发布挂牌</string>
+    <string name="listing_create_title">发布挂牌</string>
+    <string name="listing_edit">编辑</string>
+    <string name="listing_chip">本地挂牌</string>
+    <string name="listing_pick_image">选择图片</string>
+    <string name="listing_field_title">标题</string>
+    <string name="listing_field_price">价格</string>
+    <string name="listing_field_description">描述</string>
+    <string name="listing_field_category">分类</string>
+    <string name="listing_submit">发布</string>
+    <string name="profile_my_listings">我的挂牌</string>
+    <string name="home_local_listings">附近挂牌</string>
+
+    <!-- Address -->
+    <string name="address_list_title">收货地址</string>
+    <string name="address_create_title">新建地址</string>
+    <string name="address_edit_title">编辑地址</string>
+    <string name="address_default_badge">默认</string>
+    <string name="address_set_default">设为默认</string>
+    <string name="address_delete_confirm">确定删除该地址？</string>
+    <string name="address_field_receiver">收货人</string>
+    <string name="address_field_phone">手机号</string>
+    <string name="address_field_region">省市区</string>
+    <string name="address_field_detail">详细地址</string>
+    <string name="address_empty">暂无收货地址</string>
+    <string name="address_add">添加地址</string>
+    <string name="address_save">保存</string>
+    <string name="checkout_shipping_title">收货地址</string>
+    <string name="checkout_add_address">请添加收货地址</string>
+    <string name="checkout_pick_address">选择收货地址</string>
+    <string name="checkout_manage_addresses">管理地址</string>
+    <string name="order_shipping_title">收货信息</string>
+    <string name="order_shipping_missing">未填写收货地址</string>
+    <string name="profile_addresses_entry">收货地址</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_orders">订单通知</string>
+    <string name="notification_order_shipped_title">Mock 配送提醒</string>
+    <string name="notification_order_shipped_body">订单 %1$s 已模拟进入配送</string>
+    <string name="permission_notifications_rationale">允许通知以接收 Mock 配送提醒</string>
 </resources>

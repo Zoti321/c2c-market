@@ -1,0 +1,104 @@
+package com.zoti321.c2cmarket.data.repository
+
+import androidx.room.withTransaction
+import com.zoti321.c2cmarket.data.error.InvalidListingException
+import com.zoti321.c2cmarket.data.local.C2CDatabase
+import com.zoti321.c2cmarket.data.local.dao.CartDao
+import com.zoti321.c2cmarket.data.local.dao.FavoriteDao
+import com.zoti321.c2cmarket.data.local.dao.ListingDao
+import com.zoti321.c2cmarket.data.mapper.toEntity
+import com.zoti321.c2cmarket.data.mapper.toProduct
+import com.zoti321.c2cmarket.domain.error.ProductNotFoundException
+import com.zoti321.c2cmarket.domain.model.ListingInput
+import com.zoti321.c2cmarket.domain.model.Product
+import com.zoti321.c2cmarket.domain.repository.ListingRepository
+import javax.inject.Inject
+import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+
+@Singleton
+class ListingRepositoryImpl @Inject constructor(
+    private val database: C2CDatabase,
+    private val listingDao: ListingDao,
+    private val cartDao: CartDao,
+    private val favoriteDao: FavoriteDao,
+) : ListingRepository {
+
+    override fun observeAsProducts(): Flow<List<Product>> =
+        listingDao.observeAll().map { listings -> listings.map { it.toProduct() } }
+
+    override fun observeByCategory(category: String): Flow<List<Product>> =
+        listingDao.observeByCategory(category).map { listings -> listings.map { it.toProduct() } }
+
+    override fun observeMyListings(): Flow<List<Product>> = observeAsProducts()
+
+    override suspend fun getProductByCatalogId(catalogId: Int): Result<Product> = runCatching {
+        val entity = listingDao.getByCatalogId(catalogId)
+            ?: throw ProductNotFoundException(catalogId)
+        entity.toProduct()
+    }
+
+    override suspend fun create(input: ListingInput): Result<Product> = runCatching {
+        validate(input)
+        val now = System.currentTimeMillis()
+        val catalogId = nextCatalogId()
+        val entity = input.toEntity(catalogId, now)
+        listingDao.insert(entity)
+        entity.toProduct()
+    }
+
+    override suspend fun update(catalogId: Int, input: ListingInput): Result<Product> = runCatching {
+        validate(input)
+        val existing = listingDao.getByCatalogId(catalogId)
+            ?: throw ProductNotFoundException(catalogId)
+        val now = System.currentTimeMillis()
+        val updated = existing.copy(
+            title = input.title.trim(),
+            price = input.price,
+            description = input.description.trim(),
+            category = input.category,
+            imageUri = input.imageUri,
+            updatedAt = now,
+        )
+        listingDao.update(updated)
+        updated.toProduct()
+    }
+
+    override suspend fun delete(catalogId: Int): Result<Unit> = runCatching {
+        database.withTransaction {
+            listingDao.deleteByCatalogId(catalogId)
+            cartDao.deleteByProductId(catalogId)
+            favoriteDao.deleteByProductId(catalogId)
+        }
+    }
+
+    override suspend fun searchLocal(query: String): List<Product> {
+        val normalized = query.trim().lowercase()
+        if (normalized.isEmpty()) return emptyList()
+        return listingDao.observeAll().first()
+            .map { it.toProduct() }
+            .filter { it.title.lowercase().contains(normalized) }
+    }
+
+    private suspend fun nextCatalogId(): Int {
+        val minId = listingDao.minCatalogId()
+        return if (minId == null) -1 else minId - 1
+    }
+
+    private fun validate(input: ListingInput) {
+        if (input.title.isBlank() || input.title.length > 100) {
+            throw InvalidListingException("标题无效")
+        }
+        if (input.price <= 0) {
+            throw InvalidListingException("价格必须大于 0")
+        }
+        if (input.description.isBlank() || input.description.length > 500) {
+            throw InvalidListingException("描述无效")
+        }
+        if (input.imageUri.isBlank()) {
+            throw InvalidListingException("请选择图片")
+        }
+    }
+}

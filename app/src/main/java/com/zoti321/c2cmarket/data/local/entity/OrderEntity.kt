@@ -10,4 +10,7 @@ data class OrderEntity(
     val totalAmount: Double,
     val status: String,
     val createdAt: Long,
+    val shippingReceiverName: String? = null,
+    val shippingPhone: String? = null,
+    val shippingAddress: String? = null,
 )

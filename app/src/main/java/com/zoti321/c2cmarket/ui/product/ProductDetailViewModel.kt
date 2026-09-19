@@ -4,8 +4,11 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zoti321.c2cmarket.domain.error.ProductNotFoundException
+import com.zoti321.c2cmarket.domain.model.ProductSource
+import com.zoti321.c2cmarket.domain.repository.BrowseHistoryRepository
 import com.zoti321.c2cmarket.domain.repository.CartRepository
 import com.zoti321.c2cmarket.domain.repository.FavoriteRepository
+import com.zoti321.c2cmarket.domain.repository.ListingRepository
 import com.zoti321.c2cmarket.domain.repository.ProductRepository
 import com.zoti321.c2cmarket.ui.navigation.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,14 +27,18 @@ sealed interface ProductDetailEvent {
     data object AddedToCart : ProductDetailEvent
 
     data object ActionFailed : ProductDetailEvent
+
+    data object Deleted : ProductDetailEvent
 }
 
 @HiltViewModel
 class ProductDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val productRepository: ProductRepository,
+    private val listingRepository: ListingRepository,
     private val cartRepository: CartRepository,
     private val favoriteRepository: FavoriteRepository,
+    private val browseHistoryRepository: BrowseHistoryRepository,
 ) : ViewModel() {
 
     private val productId: Int = checkNotNull(savedStateHandle[Routes.PRODUCT_ID_ARG])
@@ -55,8 +62,16 @@ class ProductDetailViewModel @Inject constructor(
     fun loadProduct() {
         viewModelScope.launch {
             _uiState.value = ProductDetailUiState.Loading
-            _uiState.value = productRepository.getProduct(productId).fold(
-                onSuccess = { ProductDetailUiState.Success(it) },
+            val result = if (productId > 0) {
+                productRepository.getProduct(productId)
+            } else {
+                listingRepository.getProductByCatalogId(productId)
+            }
+            _uiState.value = result.fold(
+                onSuccess = { product ->
+                    browseHistoryRepository.recordView(product)
+                    ProductDetailUiState.Success(product)
+                },
                 onFailure = { error ->
                     ProductDetailUiState.Error(
                         when (error) {
@@ -92,4 +107,20 @@ class ProductDetailViewModel @Inject constructor(
             }
         }
     }
+
+    fun deleteListing() {
+        if (productId >= 0) return
+        viewModelScope.launch {
+            val result = listingRepository.delete(productId)
+            if (result.isSuccess) {
+                _events.emit(ProductDetailEvent.Deleted)
+            } else {
+                _events.emit(ProductDetailEvent.ActionFailed)
+            }
+        }
+    }
+
+    fun isLocalListing(): Boolean =
+        (_uiState.value as? ProductDetailUiState.Success)?.product?.source ==
+            ProductSource.LOCAL_LISTING
 }

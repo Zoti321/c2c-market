@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -19,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.zoti321.c2cmarket.R
 import com.zoti321.c2cmarket.domain.model.Product
-import com.zoti321.c2cmarket.ui.common.formatPrice
+import com.zoti321.c2cmarket.domain.model.ProductSource
 
 @Composable
 fun ProductCard(
@@ -43,6 +44,13 @@ fun ProductCard(
                     .aspectRatio(1f),
                 contentScale = ContentScale.Crop,
             )
+            if (product.source == ProductSource.LOCAL_LISTING) {
+                AssistChip(
+                    onClick = {},
+                    label = { Text(stringResource(R.string.listing_chip)) },
+                    modifier = Modifier.padding(start = 8.dp, top = 4.dp),
+                )
+            }
             Text(
                 text = product.title,
                 style = MaterialTheme.typography.bodyMedium,

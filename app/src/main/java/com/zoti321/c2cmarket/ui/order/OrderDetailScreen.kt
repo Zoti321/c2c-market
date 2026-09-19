@@ -86,7 +86,32 @@ fun OrderDetailScreen(
                             modifier = Modifier.padding(top = 8.dp),
                         )
                     }
-                    HorizontalDivider()
+                    if (order.shipping != null) {
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                            Text(
+                                text = stringResource(R.string.order_shipping_title),
+                                style = MaterialTheme.typography.titleSmall,
+                            )
+                            Text(
+                                text = "${order.shipping.receiverName}  ${order.shipping.phone}",
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            Text(
+                                text = order.shipping.address,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        HorizontalDivider()
+                    } else {
+                        Text(
+                            text = stringResource(R.string.order_shipping_missing),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        )
+                        HorizontalDivider()
+                    }
                     LazyColumn(modifier = Modifier.weight(1f)) {
                         items(order.items, key = { it.productId }) { item ->
                             OrderLineItemRow(item)
