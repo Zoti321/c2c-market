@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.zoti321.c2cmarket.R
@@ -44,15 +45,23 @@ fun BottomNavBar(navController: NavHostController) {
 
     NavigationBar {
         items.forEach { item ->
+            val selected = currentDestination?.hierarchy?.any { dest ->
+                dest.route == item.route || dest.route?.startsWith("${item.route}/") == true
+            } == true
+
             NavigationBarItem(
-                selected = currentDestination?.hierarchy?.any { it.route == item.route } == true,
+                selected = selected,
                 onClick = {
-                    navController.navigate(item.route) {
-                        popUpTo(Routes.HOME) {
-                            saveState = true
+                    if (item.route == Routes.CATEGORY && selected) {
+                        navController.popBackStack(Routes.Category.LIST, inclusive = false)
+                    } else {
+                        navController.navigate(item.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
                     }
                 },
                 icon = item.icon,

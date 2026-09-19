@@ -1,0 +1,44 @@
+package com.zoti321.c2cmarket.data.local.dao
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.Query
+import androidx.room.Transaction
+import com.zoti321.c2cmarket.data.local.entity.OrderEntity
+import com.zoti321.c2cmarket.data.local.entity.OrderLineItemEntity
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface OrderDao {
+    @Insert
+    suspend fun insertOrder(order: OrderEntity): Long
+
+    @Insert
+    suspend fun insertLineItems(items: List<OrderLineItemEntity>)
+
+    @Query("DELETE FROM cart_items")
+    suspend fun clearCart()
+
+    @Transaction
+    suspend fun placeOrderWithClearCart(
+        order: OrderEntity,
+        lineItems: List<OrderLineItemEntity>,
+    ): Long {
+        val orderId = insertOrder(order)
+        insertLineItems(lineItems.map { it.copy(orderId = orderId) })
+        clearCart()
+        return orderId
+    }
+
+    @Query("SELECT * FROM orders ORDER BY createdAt DESC")
+    fun observeAllOrders(): Flow<List<OrderEntity>>
+
+    @Query("SELECT * FROM orders WHERE id = :id")
+    fun observeOrder(id: Long): Flow<OrderEntity?>
+
+    @Query("SELECT * FROM order_line_items WHERE orderId = :orderId")
+    fun observeLineItems(orderId: Long): Flow<List<OrderLineItemEntity>>
+
+    @Query("SELECT * FROM order_line_items")
+    fun observeAllLineItems(): Flow<List<OrderLineItemEntity>>
+}

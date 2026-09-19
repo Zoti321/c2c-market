@@ -1,6 +1,6 @@
 # C2C Market（原生 Android 学习项目）
 
-> 轻量 C2C 电商 / 二手交易 App，边做边学，目标初工程师水平。
+> **路线图**：[C2C Market MVP — 路线图 (#1)](https://github.com/Zoti321/c2c-market/issues/1)
 
 通过开发一个买家闭环的 C2C 市场应用，系统学习原生 Android 开发。项目基于 **Kotlin + Jetpack Compose + Material 3 + Hilt**，逐步引入网络请求、Paging、Room 本地存储与 MVVM 架构分层。
 
@@ -31,14 +31,12 @@
 
 ### MVP（当前阶段）
 
+**路线图**（[#1](https://github.com/Zoti321/c2c-market/issues/1)）跟踪**决策、规格与验收**；代码在规格锁定后用 `/implement` 执行（路线图不挂实现票）。
+
 - [x] 项目骨架：Hilt + Theme + NavHost + Bottom Nav（4 Tab）
-- [ ] 首页 Paging 3 + FakeStore 集成
-- [ ] 分类 Tab
-- [ ] 商品详情 + Coil
-- [ ] Room：购物车 + 收藏
-- [ ] 结算 + Mock 订单
-- [ ] 订单列表/详情 + Loading/Error/Empty + 深色模式
-- [ ] MVP 验收
+- [ ] 决策票：FakeStore 调研、MVP 边界、UI 原型、各模块规格（见 [#1](https://github.com/Zoti321/c2c-market/issues/1)）
+- [ ] `/implement`：首页 Paging + FakeStore → 分类 → 详情 → Room 购物车/收藏 → Mock 结算 → 订单与三态 UI
+- [ ] [MVP 验收 (#11)](https://github.com/Zoti321/c2c-market/issues/11)（以 #5 锁定的清单为准）
 
 **MVP 明确不做**：登录、真支付、发布挂牌、聊天、Push、地图
 
@@ -114,6 +112,12 @@ Base URL: `https://fakestoreapi.com/`
 - JDK 17
 - Android SDK 37
 - 模拟器或真机（需联网）
+
+## 开发流程
+
+采用 **Feature Branch → PR → CI Green → Merge to main** 工作流：在功能分支开发，经 Pull Request 合入 `main`，CI 全部通过后方可合并。
+
+**当前 MVP 开发分支**：`feature/mvp-roadmap`（文档与代码均提交到此分支）。详见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
 
 ## 快速开始
 
