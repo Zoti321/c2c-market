@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- CI 只门禁 Error；依赖版本提示保留为 Warning -->
+    <issue id="GradleDependency" severity="warning" />
+    <issue id="NewerVersionAvailable" severity="warning" />
+    <issue id="AndroidGradlePluginVersion" severity="warning" />
+</lint>

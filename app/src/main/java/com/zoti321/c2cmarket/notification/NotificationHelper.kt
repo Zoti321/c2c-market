@@ -1,5 +1,6 @@
 package com.zoti321.c2cmarket.notification
 
+import android.annotation.SuppressLint
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -40,6 +41,7 @@ class NotificationHelper @Inject constructor(
         manager.createNotificationChannel(channel)
     }
 
+    @SuppressLint("MissingPermission")
     fun showOrderShipped(orderId: Long, orderNumber: String) {
         if (!hasNotificationPermission()) return
         ensureChannel()

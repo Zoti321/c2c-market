@@ -1,4 +1,9 @@
 import java.util.Properties
+import org.gradle.api.tasks.testing.Test
+import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
+import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
+import org.gradle.testing.jacoco.tasks.JacocoReport
+import org.gradle.testing.jacoco.tasks.JacocoReportBase
 
 plugins {
     alias(libs.plugins.android.application)
@@ -6,6 +11,8 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.detekt)
+    jacoco
 }
 
 android {
@@ -38,6 +45,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            enableUnitTestCoverage = true
+            enableAndroidTestCoverage = true
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -50,6 +61,12 @@ android {
                 signingConfig = signingConfigs.getByName("release")
             }
         }
+    }
+    lint {
+        abortOnError = true
+        warningsAsErrors = false
+        checkReleaseBuilds = false
+        lintConfig = file("lint.xml")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -72,6 +89,78 @@ kotlin {
 
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
+}
+
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom("$projectDir/config/detekt.yml")
+}
+
+tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+    jvmTarget = "17"
+}
+
+val jacocoExcludes = listOf(
+    "**/R.class",
+    "**/R\$*.class",
+    "**/BuildConfig.*",
+    "**/Manifest*.*",
+    "**/*Test*.*",
+    "**/*\$Lambda\$*.*",
+    "**/*\$inlined\$*.*",
+    "**/Hilt_*.*",
+    "**/*_HiltModules*.*",
+    "**/*_MembersInjector*.*",
+    "**/dagger/**",
+    "**/*Module*.*",
+    "**/*_Factory*.*",
+    "**/*_Impl*.*",
+    "**/*ComposableSingletons*.*",
+    "**/di/**",
+)
+
+tasks.withType<Test>().configureEach {
+    extensions.configure(JacocoTaskExtension::class.java) {
+        isIncludeNoLocationClasses = true
+        excludes = listOf("jdk.internal.*")
+    }
+}
+
+fun configureJacocoSources(task: JacocoReportBase) {
+    val debugTree = fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug")) {
+        exclude(jacocoExcludes)
+    }
+    task.classDirectories.setFrom(debugTree)
+    task.sourceDirectories.setFrom(files("src/main/java"))
+    task.executionData.setFrom(
+        layout.buildDirectory.file(
+            "outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec",
+        ),
+    )
+}
+
+tasks.register<JacocoReport>("jacocoDebugUnitTestReport") {
+    description = "Generate JaCoCo coverage report for debug unit tests"
+    dependsOn("testDebugUnitTest")
+    configureJacocoSources(this)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+}
+
+tasks.register<JacocoCoverageVerification>("jacocoDebugUnitTestCoverageVerification") {
+    description = "Verify debug unit test line coverage meets the minimum threshold"
+    dependsOn("jacocoDebugUnitTestReport")
+    configureJacocoSources(this)
+    violationRules {
+        rule {
+            limit {
+                counter = "LINE"
+                minimum = 0.10.toBigDecimal()
+            }
+        }
+    }
 }
 
 dependencies {

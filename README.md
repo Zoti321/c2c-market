@@ -109,7 +109,7 @@ Base URL: `https://fakestoreapi.com/`
 ## 环境要求
 
 - Android Studio（推荐最新稳定版）
-- JDK 17
+- **JDK 17**（Gradle Daemon 与 CI 均使用 17；仓库根目录有 `.java-version`）
 - Android SDK 37
 - 模拟器或真机（需联网）
 

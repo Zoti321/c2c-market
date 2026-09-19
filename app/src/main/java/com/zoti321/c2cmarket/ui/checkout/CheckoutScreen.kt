@@ -34,7 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -66,7 +65,7 @@ fun CheckoutScreen(
     val addresses by viewModel.addresses.collectAsStateWithLifecycle()
     val canPlaceOrder by viewModel.canPlaceOrder.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val context = LocalContext.current
+    val checkoutFailedMessage = stringResource(R.string.checkout_failed)
     var showAddressPicker by remember { mutableStateOf(false) }
 
     val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -80,7 +79,7 @@ fun CheckoutScreen(
             when (event) {
                 is CheckoutEvent.OrderPlaced -> onOrderPlaced(event.orderId)
                 CheckoutEvent.PlaceOrderFailed -> {
-                    snackbarHostState.showSnackbar(context.getString(R.string.checkout_failed))
+                    snackbarHostState.showSnackbar(checkoutFailedMessage)
                 }
             }
         }

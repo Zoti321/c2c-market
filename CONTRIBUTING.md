@@ -36,10 +36,15 @@ git checkout -b feature/简短描述
 
 ### 2. 开发与本地验证
 
+> Gradle Daemon 请使用 **JDK 17**（与 CI 一致；见 `.java-version`）。在 JDK 21+ 上 Detekt 可能无法运行。
+
 ```bash
 ./gradlew assembleDebug
-./gradlew test                              # JVM 单测（CI 门禁）
-./gradlew connectedDebugAndroidTest        # Compose 冒烟（推荐 PR 前手工）
+./gradlew test                              # JVM 单测
+./gradlew lintDebug detekt                  # 静态分析（与 CI 一致）
+./gradlew jacocoDebugUnitTestReport         # 覆盖率报告
+./gradlew connectedDebugAndroidTest         # 仪器测试（CI 已跑，本地可选调试）
+./gradlew assembleRelease                   # Release + R8（需 keystore.properties）
 ```
 
 测试范围见 [约定 v2.5 测试范围与策略规格](https://github.com/Zoti321/c2c-market/issues/25)（Issue comment 全文）。
@@ -115,7 +120,7 @@ MVP 已合入 `main`（[#1](https://github.com/Zoti321/c2c-market/issues/1) 关�
 - 合并前必须通过 Required Status Checks
 - （可选）需要 PR Review
 
-> v2.6 起 CI 见 [`.github/workflows/android-ci.yml`](.github/workflows/android-ci.yml)（`test` + `assembleDebug`）。Release 签名见 [`keystore.properties.example`](keystore.properties.example) 与 [约定 v2.6 Release、R8 与 CI 规格](https://github.com/Zoti321/c2c-market/issues/26)。
+> v2.6 起 CI 见 [`.github/workflows/android-ci.yml`](.github/workflows/android-ci.yml)：`lintDebug` + `detekt` + `test` + JaCoCo 覆盖率门禁 + `connectedDebugAndroidTest` + `assembleRelease`（CI 临时 keystore）。Release 签名见 [`keystore.properties.example`](keystore.properties.example) 与 [约定 v2.6 Release、R8 与 CI 规格](https://github.com/Zoti321/c2c-market/issues/26)。
 
 ## 相关文档
 

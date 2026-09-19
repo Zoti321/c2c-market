@@ -28,7 +28,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -53,16 +52,17 @@ fun ProductDetailScreen(
     val isFavorite by viewModel.isFavorite.collectAsStateWithLifecycle()
     val isAddingToCart by viewModel.isAddingToCart.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val context = LocalContext.current
+    val addedToCartMessage = stringResource(R.string.product_added_to_cart)
+    val actionFailedMessage = stringResource(R.string.product_action_failed)
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
                 ProductDetailEvent.AddedToCart -> {
-                    snackbarHostState.showSnackbar(context.getString(R.string.product_added_to_cart))
+                    snackbarHostState.showSnackbar(addedToCartMessage)
                 }
                 ProductDetailEvent.ActionFailed -> {
-                    snackbarHostState.showSnackbar(context.getString(R.string.product_action_failed))
+                    snackbarHostState.showSnackbar(actionFailedMessage)
                 }
                 ProductDetailEvent.Deleted -> onBack()
             }
