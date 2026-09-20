@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zoti321.c2cmarket.domain.model.Message
+import com.zoti321.c2cmarket.domain.repository.AuthRepository
 import com.zoti321.c2cmarket.domain.repository.ChatRepository
 import com.zoti321.c2cmarket.ui.navigation.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -11,6 +12,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,7 +20,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 sealed interface ChatUiState {
@@ -26,8 +28,9 @@ sealed interface ChatUiState {
 
     data class Ready(
         val productTitle: String,
-        val sellerDisplayName: String,
+        val subtitle: String,
         val messages: List<Message>,
+        val currentUserId: String,
     ) : ChatUiState
 
     data class Error(val throwable: Throwable) : ChatUiState
@@ -42,6 +45,7 @@ sealed interface ChatEvent {
 class ChatViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val chatRepository: ChatRepository,
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
 
     private val conversationId: Long = checkNotNull(savedStateHandle[Routes.CONVERSATION_ID_ARG])
@@ -58,26 +62,33 @@ class ChatViewModel @Inject constructor(
     private val _events = MutableSharedFlow<ChatEvent>()
     val events = _events.asSharedFlow()
 
+    val currentUserId: StateFlow<String> = authRepository.currentUserId()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
+
     init {
         viewModelScope.launch {
             chatRepository.markConversationRead(conversationId)
         }
         viewModelScope.launch {
             combine(
-                chatRepository.observeConversations().map { conversations ->
-                    conversations.find { it.id == conversationId }
-                },
+                chatRepository.observeConversationForCurrentUser(conversationId),
                 chatRepository.observeMessages(conversationId),
-            ) { conversation, messages ->
-                conversation to messages
-            }.collect { (conversation, messages) ->
+                authRepository.currentUserId(),
+            ) { conversation, messages, userId ->
+                Triple(conversation, messages, userId)
+            }.collect { (conversation, messages, userId) ->
                 if (conversation == null) {
                     _uiState.value = ChatUiState.Error(IllegalStateException("Conversation not found"))
                 } else {
+                    val subtitle = when (userId) {
+                        conversation.sellerId -> conversation.buyerDisplayName
+                        else -> conversation.sellerDisplayName
+                    }
                     _uiState.value = ChatUiState.Ready(
                         productTitle = conversation.productTitle,
-                        sellerDisplayName = conversation.sellerDisplayName,
+                        subtitle = subtitle,
                         messages = messages,
+                        currentUserId = userId,
                     )
                 }
             }

@@ -49,10 +49,10 @@ interface MessageDao {
     @Query(
         """
         UPDATE messages SET isRead = 1
-        WHERE conversationId = :conversationId AND senderId != :buyerId
+        WHERE conversationId = :conversationId AND senderId != :currentUserId
         """,
     )
-    suspend fun markSellerMessagesRead(conversationId: Long, buyerId: String)
+    suspend fun markOtherPartyMessagesRead(conversationId: Long, currentUserId: String)
 }
 
 fun MessageDao.observeDraft(conversationId: Long): Flow<String> =

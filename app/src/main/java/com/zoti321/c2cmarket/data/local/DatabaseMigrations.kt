@@ -120,6 +120,17 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
     }
 }
 
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "ALTER TABLE conversations ADD COLUMN buyerDisplayName TEXT NOT NULL DEFAULT '游客'",
+        )
+        db.execSQL(
+            "ALTER TABLE conversations ADD COLUMN sellerUnreadCount INTEGER NOT NULL DEFAULT 0",
+        )
+    }
+}
+
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL(

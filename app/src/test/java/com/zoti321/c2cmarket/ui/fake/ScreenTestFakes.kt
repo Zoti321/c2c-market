@@ -108,7 +108,16 @@ object ScreenTestViewModels {
     )
 
     fun conversationList(): ConversationListViewModel =
-        ConversationListViewModel(FakeChatRepository())
+        ConversationListViewModel(
+            SavedStateHandle(mapOf(Routes.CONVERSATION_ROLE_ARG to "buyer")),
+            FakeChatRepository(),
+        )
+
+    fun sellerConversationList(): ConversationListViewModel =
+        ConversationListViewModel(
+            SavedStateHandle(mapOf(Routes.CONVERSATION_ROLE_ARG to "seller")),
+            FakeChatRepository(),
+        )
 
     fun chat(conversationId: Long = 1L): ChatViewModel {
         val conversation = Conversation(
@@ -119,9 +128,11 @@ object ScreenTestViewModels {
             sellerId = "seller-1",
             sellerDisplayName = "卖家",
             buyerId = GuestSession.GUEST_ID,
+            buyerDisplayName = "游客",
             lastMessagePreview = "",
             lastMessageAt = 100L,
             unreadCount = 0,
+            sellerUnreadCount = 0,
             createdAt = 100L,
         )
         return ChatViewModel(
@@ -131,6 +142,7 @@ object ScreenTestViewModels {
             chatRepository = FakeChatRepository(
                 conversations = listOf(conversation),
             ),
+            authRepository = FakeAuthRepository(),
         )
     }
 }

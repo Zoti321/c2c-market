@@ -142,12 +142,18 @@ fun C2CApp(deepLinkIntent: Intent? = null) {
                             navController.navigate(Routes.editListing(catalogId))
                         },
                         onManageAddresses = { navController.navigate(Routes.ADDRESS_LIST) },
-                        onMessagesClick = { navController.navigate(Routes.CONVERSATIONS) },
+                        onBuyerMessagesClick = { navController.navigate(Routes.conversationsBuyer()) },
+                        onSellerMessagesClick = { navController.navigate(Routes.conversationsSeller()) },
                     ),
                 )
             }
 
-            composable(Routes.CONVERSATIONS) {
+            composable(
+                route = Routes.CONVERSATIONS,
+                arguments = listOf(
+                    navArgument(Routes.CONVERSATION_ROLE_ARG) { type = NavType.StringType },
+                ),
+            ) {
                 ConversationListScreen(
                     onBack = { navController.popBackStack() },
                     onConversationClick = { conversationId ->

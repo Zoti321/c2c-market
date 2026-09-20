@@ -86,7 +86,7 @@ class GuestDataMigratorTest {
         val listing = database.listingDao().observeAll().first().first()
         assertEquals(googleUserId, listing.sellerId)
 
-        val conversation = database.conversationDao().observeAll(googleUserId).first().first()
+        val conversation = database.conversationDao().observeByBuyerId(googleUserId).first().first()
         assertEquals(googleUserId, conversation.buyerId)
     }
 

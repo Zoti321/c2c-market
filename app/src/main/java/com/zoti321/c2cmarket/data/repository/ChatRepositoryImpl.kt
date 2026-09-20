@@ -13,6 +13,7 @@ import com.zoti321.c2cmarket.data.mapper.toEntityValue
 import com.zoti321.c2cmarket.di.ApplicationScope
 import com.zoti321.c2cmarket.di.IoDispatcher
 import com.zoti321.c2cmarket.domain.MockSellerResolver
+import com.zoti321.c2cmarket.domain.model.AuthState
 import com.zoti321.c2cmarket.domain.model.Conversation
 import com.zoti321.c2cmarket.domain.model.Message
 import com.zoti321.c2cmarket.domain.model.MessageStatus
@@ -46,10 +47,26 @@ class ChatRepositoryImpl @Inject constructor(
     private val messageDao: MessageDao = database.messageDao()
     private val listingDao: ListingDao = database.listingDao()
 
-    override fun observeConversations(): Flow<List<Conversation>> =
+    override fun observeConversations(): Flow<List<Conversation>> = observeConversationsAsBuyer()
+
+    override fun observeConversationsAsBuyer(): Flow<List<Conversation>> =
         authRepository.currentUserId().flatMapLatest { buyerId ->
-            conversationDao.observeAll(buyerId).map { entities ->
+            conversationDao.observeByBuyerId(buyerId).map { entities ->
                 entities.map { it.toDomain() }
+            }
+        }
+
+    override fun observeConversationsAsSeller(): Flow<List<Conversation>> =
+        authRepository.currentUserId().flatMapLatest { sellerId ->
+            conversationDao.observeBySellerId(sellerId).map { entities ->
+                entities.map { it.toDomain() }
+            }
+        }
+
+    override fun observeConversationForCurrentUser(conversationId: Long): Flow<Conversation?> =
+        authRepository.currentUserId().flatMapLatest { userId ->
+            conversationDao.observeById(conversationId).map { entity ->
+                entity?.takeIf { it.buyerId == userId || it.sellerId == userId }?.toDomain()
             }
         }
 
@@ -58,12 +75,21 @@ class ChatRepositoryImpl @Inject constructor(
             entities.map { it.toDomain() }
         }
 
+    override suspend fun getConversationForUser(conversationId: Long): Conversation? =
+        withContext(ioDispatcher) {
+            val userId = authRepository.currentUserId().first()
+            val entity = conversationDao.getById(conversationId) ?: return@withContext null
+            if (entity.buyerId != userId && entity.sellerId != userId) return@withContext null
+            entity.toDomain()
+        }
+
     override suspend fun getOrCreateConversation(product: Product): Result<Conversation> =
         withContext(ioDispatcher) {
             runCatching {
                 val seller = resolveSeller(product)
                     ?: error("Cannot create conversation without seller")
                 val buyerId = authRepository.currentUserId().first()
+                val buyerDisplayName = resolveBuyerDisplayName()
                 val existing = conversationDao.findByUniqueKey(
                     buyerId = buyerId,
                     sellerId = seller.sellerId,
@@ -81,9 +107,11 @@ class ChatRepositoryImpl @Inject constructor(
                         sellerId = seller.sellerId,
                         sellerDisplayName = seller.sellerDisplayName,
                         buyerId = buyerId,
+                        buyerDisplayName = buyerDisplayName,
                         lastMessagePreview = "",
                         lastMessageAt = now,
                         unreadCount = 0,
+                        sellerUnreadCount = 0,
                         createdAt = now,
                     ),
                 )
@@ -143,11 +171,18 @@ class ChatRepositoryImpl @Inject constructor(
                     id = conversationId,
                     preview = trimmed,
                     lastMessageAt = now,
-                    unreadCount = 0,
                 )
 
-                if (conversation.sellerId.startsWith(MOCK_SELLER_PREFIX)) {
-                    scheduleMockReply(conversationId, conversation.sellerId)
+                when (senderId) {
+                    conversation.buyerId -> {
+                        conversationDao.incrementSellerUnread(conversationId)
+                        if (conversation.sellerId.startsWith(MOCK_SELLER_PREFIX)) {
+                            scheduleMockReply(conversationId, conversation.sellerId)
+                        }
+                    }
+                    conversation.sellerId -> {
+                        conversationDao.incrementBuyerUnread(conversationId)
+                    }
                 }
 
                 MessageEntity(
@@ -164,13 +199,23 @@ class ChatRepositoryImpl @Inject constructor(
 
     override suspend fun markConversationRead(conversationId: Long) =
         withContext(ioDispatcher) {
-            val buyerId = authRepository.currentUserId().first()
-            messageDao.markSellerMessagesRead(conversationId, buyerId)
-            conversationDao.clearUnread(conversationId)
+            val userId = authRepository.currentUserId().first()
+            val conversation = conversationDao.getById(conversationId) ?: return@withContext
+            messageDao.markOtherPartyMessagesRead(conversationId, userId)
+            when (userId) {
+                conversation.buyerId -> conversationDao.clearBuyerUnread(conversationId)
+                conversation.sellerId -> conversationDao.clearSellerUnread(conversationId)
+            }
         }
 
     override fun observeDraft(conversationId: Long): Flow<String> =
         messageDao.observeDraft(conversationId)
+
+    private suspend fun resolveBuyerDisplayName(): String =
+        when (val state = authRepository.observeAuthState().first()) {
+            AuthState.Guest -> "游客"
+            is AuthState.SignedIn -> state.profile.displayName
+        }
 
     private suspend fun resolveSeller(product: Product): MockSellerResolver.MockSeller? =
         when (product.source) {
@@ -203,8 +248,8 @@ class ChatRepositoryImpl @Inject constructor(
                 id = conversationId,
                 preview = body,
                 lastMessageAt = now,
-                unreadCount = conversation.unreadCount + 1,
             )
+            conversationDao.incrementBuyerUnread(conversationId)
         }
     }
 

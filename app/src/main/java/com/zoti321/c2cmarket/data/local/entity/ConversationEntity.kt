@@ -21,8 +21,10 @@ data class ConversationEntity(
     val sellerId: String,
     val sellerDisplayName: String,
     val buyerId: String,
+    val buyerDisplayName: String = "游客",
     val lastMessagePreview: String,
     val lastMessageAt: Long,
     val unreadCount: Int,
+    val sellerUnreadCount: Int = 0,
     val createdAt: Long,
 )

@@ -152,11 +152,22 @@ private class NoOpChatRepository : ChatRepository {
     override fun observeConversations(): Flow<List<com.zoti321.c2cmarket.domain.model.Conversation>> =
         flowOf(emptyList())
 
+    override fun observeConversationsAsBuyer(): Flow<List<com.zoti321.c2cmarket.domain.model.Conversation>> =
+        flowOf(emptyList())
+
+    override fun observeConversationsAsSeller(): Flow<List<com.zoti321.c2cmarket.domain.model.Conversation>> =
+        flowOf(emptyList())
+
+    override fun observeConversationForCurrentUser(conversationId: Long): Flow<com.zoti321.c2cmarket.domain.model.Conversation?> =
+        flowOf(null)
+
     override fun observeMessages(conversationId: Long): Flow<List<com.zoti321.c2cmarket.domain.model.Message>> =
         flowOf(emptyList())
 
     override suspend fun getOrCreateConversation(product: Product): Result<com.zoti321.c2cmarket.domain.model.Conversation> =
         Result.failure(IllegalStateException("unused"))
+
+    override suspend fun getConversationForUser(conversationId: Long): com.zoti321.c2cmarket.domain.model.Conversation? = null
 
     override suspend fun saveDraft(conversationId: Long, body: String) = Unit
 

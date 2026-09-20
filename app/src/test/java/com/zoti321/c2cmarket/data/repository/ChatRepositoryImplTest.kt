@@ -136,8 +136,8 @@ class ChatRepositoryImplTest {
             id = conversation.id,
             preview = "seller reply",
             lastMessageAt = sellerReplyAt,
-            unreadCount = 1,
         )
+        database.conversationDao().incrementBuyerUnread(conversation.id)
 
         repository.markConversationRead(conversation.id)
 
@@ -164,6 +164,146 @@ class ChatRepositoryImplTest {
         assertEquals(1, updated.unreadCount)
         assertTrue(updated.lastMessagePreview.isNotEmpty())
     }
+
+    @Test
+    fun sellerSendMessage_incrementsBuyerUnread() = runTest(testScheduler) {
+        val sellerId = "google:seller-1"
+        val auth = FakeAuthRepository(initialUserId = sellerId)
+        val sellerRepo = ChatRepositoryImpl(
+            database = database,
+            authRepository = auth,
+            context = ApplicationProvider.getApplicationContext(),
+            applicationScope = testScope,
+            ioDispatcher = StandardTestDispatcher(testScheduler),
+        )
+        val buyerAuth = FakeAuthRepository()
+        val buyerRepo = ChatRepositoryImpl(
+            database = database,
+            authRepository = buyerAuth,
+            context = ApplicationProvider.getApplicationContext(),
+            applicationScope = testScope,
+            ioDispatcher = StandardTestDispatcher(testScheduler),
+        )
+        val listingProduct = localListingProduct(sellerId = sellerId)
+        database.listingDao().insert(
+            com.zoti321.c2cmarket.data.local.entity.ListingEntity(
+                catalogId = listingProduct.id,
+                title = listingProduct.title,
+                price = listingProduct.price,
+                description = listingProduct.description,
+                category = listingProduct.category,
+                imageUri = listingProduct.imageUrl,
+                sellerId = sellerId,
+                createdAt = 1L,
+                updatedAt = 1L,
+            ),
+        )
+        val conversation = buyerRepo.getOrCreateConversation(listingProduct).getOrThrow()
+
+        sellerRepo.sendMessage(conversation.id, "seller reply").getOrThrow()
+        advanceUntilIdle()
+
+        val buyerView = buyerRepo.observeConversationsAsBuyer().first().first()
+        assertEquals(1, buyerView.unreadCount)
+        assertEquals(0, buyerView.sellerUnreadCount)
+    }
+
+    @Test
+    fun sellerSendMessage_doesNotTriggerMockReply() = runTest(testScheduler) {
+        val sellerId = "google:seller-1"
+        val auth = FakeAuthRepository(initialUserId = sellerId)
+        val sellerRepo = ChatRepositoryImpl(
+            database = database,
+            authRepository = auth,
+            context = ApplicationProvider.getApplicationContext(),
+            applicationScope = testScope,
+            ioDispatcher = StandardTestDispatcher(testScheduler),
+        )
+        val buyerAuth = FakeAuthRepository()
+        val buyerRepo = ChatRepositoryImpl(
+            database = database,
+            authRepository = buyerAuth,
+            context = ApplicationProvider.getApplicationContext(),
+            applicationScope = testScope,
+            ioDispatcher = StandardTestDispatcher(testScheduler),
+        )
+        val listingProduct = localListingProduct(sellerId = sellerId)
+        database.listingDao().insert(
+            com.zoti321.c2cmarket.data.local.entity.ListingEntity(
+                catalogId = listingProduct.id,
+                title = listingProduct.title,
+                price = listingProduct.price,
+                description = listingProduct.description,
+                category = listingProduct.category,
+                imageUri = listingProduct.imageUrl,
+                sellerId = sellerId,
+                createdAt = 1L,
+                updatedAt = 1L,
+            ),
+        )
+        val conversation = buyerRepo.getOrCreateConversation(listingProduct).getOrThrow()
+        buyerRepo.sendMessage(conversation.id, "buyer hello").getOrThrow()
+
+        sellerRepo.sendMessage(conversation.id, "seller reply").getOrThrow()
+        advanceTimeBy(ChatRepositoryImpl.MOCK_SELLER_REPLY_DELAY_MS + 100)
+        advanceUntilIdle()
+
+        val messages = buyerRepo.observeMessages(conversation.id).first()
+        assertEquals(2, messages.size)
+    }
+
+    @Test
+    fun observeConversationsAsSeller_returnsSellerInbox() = runTest(testScheduler) {
+        val sellerId = "google:seller-1"
+        val buyerAuth = FakeAuthRepository()
+        val buyerRepo = ChatRepositoryImpl(
+            database = database,
+            authRepository = buyerAuth,
+            context = ApplicationProvider.getApplicationContext(),
+            applicationScope = testScope,
+            ioDispatcher = StandardTestDispatcher(testScheduler),
+        )
+        val sellerAuth = FakeAuthRepository(initialUserId = sellerId)
+        val sellerRepo = ChatRepositoryImpl(
+            database = database,
+            authRepository = sellerAuth,
+            context = ApplicationProvider.getApplicationContext(),
+            applicationScope = testScope,
+            ioDispatcher = StandardTestDispatcher(testScheduler),
+        )
+        val listingProduct = localListingProduct(sellerId = sellerId)
+        database.listingDao().insert(
+            com.zoti321.c2cmarket.data.local.entity.ListingEntity(
+                catalogId = listingProduct.id,
+                title = listingProduct.title,
+                price = listingProduct.price,
+                description = listingProduct.description,
+                category = listingProduct.category,
+                imageUri = listingProduct.imageUrl,
+                sellerId = sellerId,
+                createdAt = 1L,
+                updatedAt = 1L,
+            ),
+        )
+        val conversation = buyerRepo.getOrCreateConversation(listingProduct).getOrThrow()
+        buyerRepo.sendMessage(conversation.id, "question").getOrThrow()
+        advanceUntilIdle()
+
+        val sellerInbox = sellerRepo.observeConversationsAsSeller().first()
+        assertEquals(1, sellerInbox.size)
+        assertEquals(1, sellerInbox.first().sellerUnreadCount)
+    }
+
+    private fun localListingProduct(sellerId: String) = Product(
+        id = -1,
+        title = "Local Listing",
+        price = 50.0,
+        description = "Desc",
+        category = "electronics",
+        imageUrl = "content://image",
+        rating = Rating(rate = 0.0, count = 0),
+        source = ProductSource.LOCAL_LISTING,
+    )
 
     private fun remoteProduct(id: Int = 1) = Product(
         id = id,

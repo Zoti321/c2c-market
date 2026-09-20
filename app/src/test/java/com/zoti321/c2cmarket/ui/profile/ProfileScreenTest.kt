@@ -48,7 +48,8 @@ class ProfileScreenTest {
                     onCreateListing = {},
                     onEditListing = {},
                     onManageAddresses = {},
-                    onMessagesClick = {},
+                    onBuyerMessagesClick = {},
+                    onSellerMessagesClick = {},
                 ),
                 viewModel = ScreenTestViewModels.guestProfile(),
             )
@@ -67,7 +68,8 @@ class ProfileScreenTest {
                     onCreateListing = {},
                     onEditListing = {},
                     onManageAddresses = {},
-                    onMessagesClick = {},
+                    onBuyerMessagesClick = {},
+                    onSellerMessagesClick = {},
                 ),
                 viewModel = ScreenTestViewModels.signedInProfile(displayName = "张三"),
             )

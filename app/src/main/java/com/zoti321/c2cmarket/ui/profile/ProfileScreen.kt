@@ -127,8 +127,21 @@ fun ProfileScreen(
                     }
                     item {
                         ListItem(
-                            modifier = Modifier.clickable(onClick = callbacks.onMessagesClick),
+                            modifier = Modifier.clickable(onClick = callbacks.onBuyerMessagesClick),
                             headlineContent = { Text(stringResource(R.string.profile_messages)) },
+                            leadingContent = {
+                                Icon(Icons.Outlined.Chat, contentDescription = null)
+                            },
+                            trailingContent = {
+                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+                            },
+                        )
+                        HorizontalDivider()
+                    }
+                    item {
+                        ListItem(
+                            modifier = Modifier.clickable(onClick = callbacks.onSellerMessagesClick),
+                            headlineContent = { Text(stringResource(R.string.profile_seller_messages)) },
                             leadingContent = {
                                 Icon(Icons.Outlined.Chat, contentDescription = null)
                             },

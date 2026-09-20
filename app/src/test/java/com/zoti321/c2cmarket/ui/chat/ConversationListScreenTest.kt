@@ -50,4 +50,17 @@ class ConversationListScreenTest {
         composeRule.waitForIdle()
         composeRule.onNodeWithText("暂无消息").assertExists()
     }
+
+    @Test
+    fun conversationListScreen_sellerRole_showsSellerEmptyState() {
+        composeRule.setContent {
+            ConversationListScreen(
+                onBack = {},
+                onConversationClick = {},
+                viewModel = ScreenTestViewModels.sellerConversationList(),
+            )
+        }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("暂无买家咨询").assertExists()
+    }
 }
