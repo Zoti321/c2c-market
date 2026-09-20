@@ -11,11 +11,13 @@ import com.zoti321.c2cmarket.data.mapper.toProduct
 import com.zoti321.c2cmarket.domain.error.ProductNotFoundException
 import com.zoti321.c2cmarket.domain.model.ListingInput
 import com.zoti321.c2cmarket.domain.model.Product
+import com.zoti321.c2cmarket.domain.repository.AuthRepository
 import com.zoti321.c2cmarket.domain.repository.ListingRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 
 @Singleton
@@ -24,6 +26,7 @@ class ListingRepositoryImpl @Inject constructor(
     private val listingDao: ListingDao,
     private val cartDao: CartDao,
     private val favoriteDao: FavoriteDao,
+    private val authRepository: AuthRepository,
 ) : ListingRepository {
 
     override fun observeAsProducts(): Flow<List<Product>> =
@@ -32,7 +35,12 @@ class ListingRepositoryImpl @Inject constructor(
     override fun observeByCategory(category: String): Flow<List<Product>> =
         listingDao.observeByCategory(category).map { listings -> listings.map { it.toProduct() } }
 
-    override fun observeMyListings(): Flow<List<Product>> = observeAsProducts()
+    override fun observeMyListings(): Flow<List<Product>> =
+        authRepository.currentUserId().flatMapLatest { sellerId ->
+            listingDao.observeBySellerId(sellerId).map { listings ->
+                listings.map { it.toProduct() }
+            }
+        }
 
     override suspend fun getProductByCatalogId(catalogId: Int): Result<Product> = runCatching {
         val entity = listingDao.getByCatalogId(catalogId)
@@ -40,17 +48,21 @@ class ListingRepositoryImpl @Inject constructor(
         entity.toProduct()
     }
 
+    override suspend fun getSellerId(catalogId: Int): String? =
+        listingDao.getByCatalogId(catalogId)?.sellerId
+
     override suspend fun create(input: ListingInput): Result<Product> = runCatching {
-        validate(input)
+        validateListingInput(input)
         val now = System.currentTimeMillis()
-        val catalogId = nextCatalogId()
-        val entity = input.toEntity(catalogId, now)
+        val catalogId = nextListingCatalogId(listingDao)
+        val sellerId = authRepository.currentUserId().first()
+        val entity = input.toEntity(catalogId, now, sellerId)
         listingDao.insert(entity)
         entity.toProduct()
     }
 
     override suspend fun update(catalogId: Int, input: ListingInput): Result<Product> = runCatching {
-        validate(input)
+        validateListingInput(input)
         val existing = listingDao.getByCatalogId(catalogId)
             ?: throw ProductNotFoundException(catalogId)
         val now = System.currentTimeMillis()
@@ -60,6 +72,7 @@ class ListingRepositoryImpl @Inject constructor(
             description = input.description.trim(),
             category = input.category,
             imageUri = input.imageUri,
+            meetupLocation = input.meetupLocation?.trim()?.takeIf { it.isNotEmpty() },
             updatedAt = now,
         )
         listingDao.update(updated)
@@ -82,19 +95,20 @@ class ListingRepositoryImpl @Inject constructor(
             .filter { it.title.lowercase().contains(normalized) }
     }
 
-    private suspend fun nextCatalogId(): Int {
-        val minId = listingDao.minCatalogId()
-        return if (minId == null) -1 else minId - 1
-    }
+}
 
-    private fun validate(input: ListingInput) {
-        val message = when {
-            input.title.isBlank() || input.title.length > 100 -> "标题无效"
-            input.price <= 0 -> "价格必须大于 0"
-            input.description.isBlank() || input.description.length > 500 -> "描述无效"
-            input.imageUri.isBlank() -> "请选择图片"
-            else -> null
-        }
-        if (message != null) throw InvalidListingException(message)
+private suspend fun nextListingCatalogId(listingDao: ListingDao): Int {
+    val minId = listingDao.minCatalogId()
+    return if (minId == null) -1 else minId - 1
+}
+
+private fun validateListingInput(input: ListingInput) {
+    val message = when {
+        input.title.isBlank() || input.title.length > 100 -> "标题无效"
+        input.price <= 0 -> "价格必须大于 0"
+        input.description.isBlank() || input.description.length > 500 -> "描述无效"
+        input.imageUri.isBlank() -> "请选择图片"
+        else -> null
     }
+    if (message != null) throw InvalidListingException(message)
 }

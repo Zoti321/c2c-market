@@ -30,6 +30,7 @@ class ListingRepositoryImplTest {
             listingDao = database.listingDao(),
             cartDao = database.cartDao(),
             favoriteDao = database.favoriteDao(),
+            authRepository = FakeAuthRepository(),
         )
     }
 
@@ -67,6 +68,18 @@ class ListingRepositoryImplTest {
         assertTrue(database.listingDao().getByCatalogId(listing.id) == null)
         assertTrue(database.cartDao().getByProductId(listing.id) == null)
         assertFalse(database.favoriteDao().isFavorite(listing.id))
+    }
+
+    @Test
+    fun create_persistsMeetupLocation() = runTest {
+        val listing = repository.create(
+            validInput("Meetup Item").copy(meetupLocation = "深圳湾公园"),
+        ).getOrThrow()
+
+        val stored = database.listingDao().getByCatalogId(listing.id)
+
+        assertEquals("深圳湾公园", stored?.meetupLocation)
+        assertEquals("深圳湾公园", repository.getProductByCatalogId(listing.id).getOrThrow().meetupLocation)
     }
 
     @Test

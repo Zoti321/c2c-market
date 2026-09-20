@@ -1,0 +1,5 @@
+# Copy to local.properties (gitignored). Used by Gradle BuildConfig — do not commit secrets.
+
+# Google OAuth 2.0 **Web** Client ID (Google Cloud Console → Credentials).
+# Required for v3.2 Sign-In with Google (Credential Manager).
+google.web_client_id=YOUR_WEB_CLIENT_ID.apps.googleusercontent.com

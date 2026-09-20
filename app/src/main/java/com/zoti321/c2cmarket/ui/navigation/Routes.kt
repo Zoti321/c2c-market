@@ -31,6 +31,11 @@ object Routes {
     const val ADDRESS_ID_ARG = "addressId"
     fun editAddress(addressId: Long) = "addresses/edit/$addressId"
 
+    const val CONVERSATIONS = "conversations"
+    const val CHAT = "chat/{conversationId}"
+    const val CONVERSATION_ID_ARG = "conversationId"
+    fun chat(conversationId: Long) = "chat/$conversationId"
+
     object Category {
         const val LIST = "category/list"
         const val PRODUCTS = "category/products/{categorySlug}"

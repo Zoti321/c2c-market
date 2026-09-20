@@ -25,8 +25,16 @@ android {
         applicationId = "com.zoti321.c2cmarket"
         minSdk = 26
         targetSdk = 37
-        versionCode = 2
-        versionName = "2.0.0"
+        versionCode = 3
+        versionName = "3.0.0"
+
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localProperties.load(localPropertiesFile.inputStream())
+        }
+        val googleWebClientId = localProperties.getProperty("google.web_client_id", "")
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
     }
 
     signingConfigs {
@@ -71,6 +79,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     testOptions {
         unitTests.isIncludeAndroidResources = true
@@ -154,7 +163,7 @@ tasks.register<JacocoCoverageVerification>("jacocoDebugUnitTestCoverageVerificat
         rule {
             limit {
                 counter = "LINE"
-                minimum = 0.10.toBigDecimal()
+                minimum = 0.12.toBigDecimal()
             }
         }
     }
@@ -188,6 +197,9 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.kotlinx.serialization)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.lifecycle.viewmodel.compose)

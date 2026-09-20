@@ -7,11 +7,16 @@ import com.zoti321.c2cmarket.data.local.MIGRATION_1_2
 import com.zoti321.c2cmarket.data.local.MIGRATION_2_3
 import com.zoti321.c2cmarket.data.local.MIGRATION_3_4
 import com.zoti321.c2cmarket.data.local.MIGRATION_4_5
+import com.zoti321.c2cmarket.data.local.MIGRATION_5_6
+import com.zoti321.c2cmarket.data.local.MIGRATION_6_7
+import com.zoti321.c2cmarket.data.local.MIGRATION_7_8
 import com.zoti321.c2cmarket.data.local.dao.AddressDao
 import com.zoti321.c2cmarket.data.local.dao.BrowseHistoryDao
 import com.zoti321.c2cmarket.data.local.dao.CartDao
+import com.zoti321.c2cmarket.data.local.dao.ConversationDao
 import com.zoti321.c2cmarket.data.local.dao.FavoriteDao
 import com.zoti321.c2cmarket.data.local.dao.ListingDao
+import com.zoti321.c2cmarket.data.local.dao.MessageDao
 import com.zoti321.c2cmarket.data.local.dao.OrderDao
 import dagger.Module
 import dagger.Provides
@@ -37,6 +42,9 @@ object DatabaseModule {
                 MIGRATION_2_3,
                 MIGRATION_3_4,
                 MIGRATION_4_5,
+                MIGRATION_5_6,
+                MIGRATION_6_7,
+                MIGRATION_7_8,
             )
             .build()
 
@@ -58,4 +66,10 @@ object DatabaseModule {
 
     @Provides
     fun provideAddressDao(database: C2CDatabase): AddressDao = database.addressDao()
+
+    @Provides
+    fun provideConversationDao(database: C2CDatabase): ConversationDao = database.conversationDao()
+
+    @Provides
+    fun provideMessageDao(database: C2CDatabase): MessageDao = database.messageDao()
 }

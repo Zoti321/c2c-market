@@ -16,6 +16,8 @@ data class ListingEntity(
     val description: String,
     val category: String,
     val imageUri: String,
+    val sellerId: String = "guest",
+    val meetupLocation: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
 )

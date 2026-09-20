@@ -7,6 +7,7 @@ import com.zoti321.c2cmarket.domain.model.Order
 import com.zoti321.c2cmarket.domain.model.OrderStatus
 import com.zoti321.c2cmarket.domain.model.OrderSummary
 import com.zoti321.c2cmarket.domain.model.ShippingInfo
+import com.zoti321.c2cmarket.data.repository.FakeAuthRepository
 import com.zoti321.c2cmarket.domain.repository.AddressRepository
 import com.zoti321.c2cmarket.domain.repository.CartRepository
 import com.zoti321.c2cmarket.domain.repository.OrderRepository
@@ -49,6 +50,7 @@ class CheckoutViewModelTest {
         val viewModel = CheckoutViewModel(
             cartRepository = FakeCartRepository(),
             addressRepository = FakeAddressRepository(emptyList()),
+            authRepository = FakeAuthRepository(),
             orderRepository = FakeOrderRepository(),
         )
         assertFalse(viewModel.canPlaceOrder.value)
@@ -60,6 +62,7 @@ class CheckoutViewModelTest {
         val viewModel = CheckoutViewModel(
             cartRepository = FakeCartRepository(),
             addressRepository = FakeAddressRepository(listOf(address)),
+            authRepository = FakeAuthRepository(),
             orderRepository = FakeOrderRepository(),
         )
         viewModel.selectAddress(address.id)
@@ -72,6 +75,7 @@ class CheckoutViewModelTest {
         val viewModel = CheckoutViewModel(
             cartRepository = FakeCartRepository(),
             addressRepository = FakeAddressRepository(listOf(address)),
+            authRepository = FakeAuthRepository(),
             orderRepository = FakeOrderRepository(),
         )
         backgroundScope.launch { viewModel.selectedAddress.collect { } }

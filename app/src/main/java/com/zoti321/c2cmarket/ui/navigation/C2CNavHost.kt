@@ -1,48 +1,63 @@
 package com.zoti321.c2cmarket.ui.navigation
 
+import android.content.Intent
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import androidx.navigation.navigation
+import com.zoti321.c2cmarket.R
+import com.zoti321.c2cmarket.navigation.DeepLinkParser
 import com.zoti321.c2cmarket.ui.address.AddressFormScreen
 import com.zoti321.c2cmarket.ui.address.AddressListScreen
 import com.zoti321.c2cmarket.ui.cart.CartScreen
 import com.zoti321.c2cmarket.ui.category.CategoryListScreen
 import com.zoti321.c2cmarket.ui.category.CategoryProductsScreen
+import com.zoti321.c2cmarket.ui.chat.ChatScreen
+import com.zoti321.c2cmarket.ui.chat.ConversationListScreen
 import com.zoti321.c2cmarket.ui.checkout.CheckoutScreen
 import com.zoti321.c2cmarket.ui.home.HomeScreen
 import com.zoti321.c2cmarket.ui.listing.CreateListingScreen
 import com.zoti321.c2cmarket.ui.order.OrderDetailScreen
 import com.zoti321.c2cmarket.ui.product.ProductDetailScreen
 import com.zoti321.c2cmarket.ui.profile.ProfileScreen
+import com.zoti321.c2cmarket.ui.profile.ProfileScreenCallbacks
 import com.zoti321.c2cmarket.ui.search.SearchScreen
 
 @Composable
-fun C2CApp(pendingOrderId: Long? = null) {
+fun C2CApp(deepLinkIntent: Intent? = null) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val showBottomBar = currentRoute in Routes.bottomNavRoutes ||
         currentRoute?.startsWith("category/") == true
+    val snackbarHostState = remember { SnackbarHostState() }
+    val invalidDeepLinkMessage = stringResource(R.string.deeplink_invalid)
 
-    LaunchedEffect(pendingOrderId) {
-        pendingOrderId?.let { orderId ->
-            navController.navigate(Routes.order(orderId)) {
-                launchSingleTop = true
-            }
+    LaunchedEffect(deepLinkIntent) {
+        val uri = deepLinkIntent?.data ?: return@LaunchedEffect
+        if (DeepLinkParser.parse(uri) == null) {
+            snackbarHostState.showSnackbar(invalidDeepLinkMessage)
+        } else {
+            navController.handleDeepLink(deepLinkIntent)
         }
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             if (showBottomBar) {
                 BottomNavBar(navController)
@@ -115,22 +130,55 @@ fun C2CApp(pendingOrderId: Long? = null) {
 
             composable(Routes.PROFILE) {
                 ProfileScreen(
-                    onOrderClick = { orderId ->
-                        navController.navigate(Routes.order(orderId))
+                    callbacks = ProfileScreenCallbacks(
+                        onOrderClick = { orderId ->
+                            navController.navigate(Routes.order(orderId))
+                        },
+                        onProductClick = { id ->
+                            navController.navigate(Routes.product(id))
+                        },
+                        onCreateListing = { navController.navigate(Routes.CREATE_LISTING) },
+                        onEditListing = { catalogId ->
+                            navController.navigate(Routes.editListing(catalogId))
+                        },
+                        onManageAddresses = { navController.navigate(Routes.ADDRESS_LIST) },
+                        onMessagesClick = { navController.navigate(Routes.CONVERSATIONS) },
+                    ),
+                )
+            }
+
+            composable(Routes.CONVERSATIONS) {
+                ConversationListScreen(
+                    onBack = { navController.popBackStack() },
+                    onConversationClick = { conversationId ->
+                        navController.navigate(Routes.chat(conversationId))
                     },
-                    onProductClick = { id ->
-                        navController.navigate(Routes.product(id))
+                )
+            }
+
+            composable(
+                route = Routes.CHAT,
+                deepLinks = listOf(
+                    navDeepLink {
+                        uriPattern = "c2cmarket://app/chat/{${Routes.CONVERSATION_ID_ARG}}"
                     },
-                    onCreateListing = { navController.navigate(Routes.CREATE_LISTING) },
-                    onEditListing = { catalogId ->
-                        navController.navigate(Routes.editListing(catalogId))
-                    },
-                    onManageAddresses = { navController.navigate(Routes.ADDRESS_LIST) },
+                ),
+                arguments = listOf(
+                    navArgument(Routes.CONVERSATION_ID_ARG) { type = NavType.LongType },
+                ),
+            ) {
+                ChatScreen(
+                    onBack = { navController.popBackStack() },
                 )
             }
 
             composable(
                 route = Routes.PRODUCT,
+                deepLinks = listOf(
+                    navDeepLink {
+                        uriPattern = "c2cmarket://app/product/{${Routes.PRODUCT_ID_ARG}}"
+                    },
+                ),
                 arguments = listOf(
                     navArgument(Routes.PRODUCT_ID_ARG) { type = NavType.IntType },
                 ),
@@ -139,6 +187,9 @@ fun C2CApp(pendingOrderId: Long? = null) {
                     onBack = { navController.popBackStack() },
                     onEditListing = { catalogId ->
                         navController.navigate(Routes.editListing(catalogId))
+                    },
+                    onContactSeller = { conversationId ->
+                        navController.navigate(Routes.chat(conversationId))
                     },
                 )
             }
@@ -158,6 +209,11 @@ fun C2CApp(pendingOrderId: Long? = null) {
 
             composable(
                 route = Routes.ORDER,
+                deepLinks = listOf(
+                    navDeepLink {
+                        uriPattern = "c2cmarket://app/order/{${Routes.ORDER_ID_ARG}}"
+                    },
+                ),
                 arguments = listOf(
                     navArgument(Routes.ORDER_ID_ARG) { type = NavType.LongType },
                 ),

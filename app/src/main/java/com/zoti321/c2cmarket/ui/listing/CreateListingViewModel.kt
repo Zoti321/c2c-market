@@ -27,6 +27,7 @@ data class CreateListingUiState(
     val description: String = "",
     val category: String = "electronics",
     val imageUri: String = "",
+    val meetupLocation: String = "",
     val isSaving: Boolean = false,
 )
 
@@ -55,6 +56,7 @@ class CreateListingViewModel @Inject constructor(
                         description = product.description,
                         category = product.category,
                         imageUri = product.imageUrl,
+                        meetupLocation = product.meetupLocation.orEmpty(),
                     )
                 }
             }
@@ -81,6 +83,10 @@ class CreateListingViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(imageUri = uri)
     }
 
+    fun updateMeetupLocation(value: String) {
+        _uiState.value = _uiState.value.copy(meetupLocation = value)
+    }
+
     fun submit() {
         val state = _uiState.value
         val price = state.price.toDoubleOrNull()
@@ -96,6 +102,7 @@ class CreateListingViewModel @Inject constructor(
             description = state.description,
             category = state.category,
             imageUri = state.imageUri,
+            meetupLocation = state.meetupLocation.takeIf { it.isNotBlank() },
         )
         viewModelScope.launch {
             _uiState.value = state.copy(isSaving = true)

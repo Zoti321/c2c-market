@@ -34,6 +34,12 @@
     <string name="product_not_found">商品不存在或已下架</string>
     <string name="product_image_error">图片加载失败</string>
     <string name="product_description">商品描述</string>
+    <string name="product_share">分享</string>
+    <string name="listing_field_meetup">面交地点（可选）</string>
+    <string name="listing_meetup_title">面交地点</string>
+    <string name="map_view_on_map">在地图中查看</string>
+    <string name="map_open_failed">未找到地图应用</string>
+    <string name="deeplink_invalid">无法打开链接</string>
 
     <!-- Cart -->
     <string name="cart_title">购物车</string>
@@ -62,6 +68,10 @@
     <!-- Profile -->
     <string name="profile_title">我的</string>
     <string name="profile_guest_mode">游客模式</string>
+    <string name="profile_sign_in_google">使用 Google 登录</string>
+    <string name="profile_sign_out">退出登录</string>
+    <string name="profile_sign_in_failed">登录失败，请重试</string>
+    <string name="checkout_signed_in_hint">你好，%1$s</string>
     <string name="profile_orders_section">我的订单</string>
 
     <!-- Price -->
@@ -120,4 +130,16 @@
     <string name="notification_order_shipped_title">Mock 配送提醒</string>
     <string name="notification_order_shipped_body">订单 %1$s 已模拟进入配送</string>
     <string name="permission_notifications_rationale">允许通知以接收 Mock 配送提醒</string>
+
+    <!-- Chat -->
+    <string name="contact_seller">联系卖家</string>
+    <string name="profile_messages">我的消息</string>
+    <string name="chat_title">聊天</string>
+    <string name="chat_conversations_title">我的消息</string>
+    <string name="chat_conversations_empty">暂无消息</string>
+    <string name="chat_conversations_empty_hint">在商品详情点击「联系卖家」开始对话</string>
+    <string name="chat_input_hint">输入消息…</string>
+    <string name="chat_send">发送</string>
+    <string name="chat_send_failed">发送失败，请重试</string>
+    <string name="chat_mock_reply_default">你好，这件商品还在的，有需要可以随时聊。</string>
 </resources>

@@ -33,6 +33,12 @@ interface OrderDao {
     @Query("SELECT * FROM orders ORDER BY createdAt DESC")
     fun observeAllOrders(): Flow<List<OrderEntity>>
 
+    @Query("SELECT * FROM orders WHERE guestId = :userId ORDER BY createdAt DESC")
+    fun observeOrdersByUserId(userId: String): Flow<List<OrderEntity>>
+
+    @Query("UPDATE orders SET guestId = :newUserId WHERE guestId = 'guest'")
+    suspend fun migrateGuestOrders(newUserId: String)
+
     @Query("SELECT * FROM orders WHERE id = :id")
     fun observeOrder(id: Long): Flow<OrderEntity?>
 

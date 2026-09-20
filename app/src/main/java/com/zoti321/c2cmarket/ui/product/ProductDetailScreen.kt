@@ -1,9 +1,11 @@
 package com.zoti321.c2cmarket.ui.product
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -12,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -19,7 +22,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -27,15 +32,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zoti321.c2cmarket.R
 import com.zoti321.c2cmarket.domain.model.ProductSource
+import com.zoti321.c2cmarket.navigation.DeepLinkParser
 import com.zoti321.c2cmarket.ui.category.categoryDisplayName
 import com.zoti321.c2cmarket.ui.common.ErrorContent
+import com.zoti321.c2cmarket.ui.common.GeoMapIntents
 import com.zoti321.c2cmarket.ui.common.LoadingContent
 import com.zoti321.c2cmarket.ui.product.components.ProductDetailBottomBar
 import com.zoti321.c2cmarket.ui.product.components.ProductHeroImage
@@ -45,15 +55,21 @@ import com.zoti321.c2cmarket.ui.product.components.ProductHeroImage
 fun ProductDetailScreen(
     onBack: () -> Unit,
     onEditListing: (Int) -> Unit,
+    onContactSeller: (Long) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProductDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isFavorite by viewModel.isFavorite.collectAsStateWithLifecycle()
     val isAddingToCart by viewModel.isAddingToCart.collectAsStateWithLifecycle()
+    val showContactSeller by viewModel.showContactSeller.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
     val addedToCartMessage = stringResource(R.string.product_added_to_cart)
     val actionFailedMessage = stringResource(R.string.product_action_failed)
+    val mapOpenFailedMessage = stringResource(R.string.map_open_failed)
+    val shareLabel = stringResource(R.string.product_share)
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
@@ -80,8 +96,25 @@ fun ProductDetailScreen(
                     }
                 },
                 actions = {
+                    val product = (uiState as? ProductDetailUiState.Success)?.product
+                    if (product != null) {
+                        IconButton(
+                            onClick = {
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(
+                                        Intent.EXTRA_TEXT,
+                                        DeepLinkParser.shareText(product.title, product.id),
+                                    )
+                                }
+                                context.startActivity(Intent.createChooser(shareIntent, shareLabel))
+                            },
+                        ) {
+                            Icon(Icons.Outlined.Share, contentDescription = shareLabel)
+                        }
+                    }
                     if (viewModel.isLocalListing()) {
-                        val productId = (uiState as? ProductDetailUiState.Success)?.product?.id
+                        val productId = product?.id
                         if (productId != null) {
                             IconButton(onClick = { onEditListing(productId) }) {
                                 Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.listing_edit))
@@ -177,6 +210,44 @@ fun ProductDetailScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     )
+                    if (
+                        product.source == ProductSource.LOCAL_LISTING &&
+                        !product.meetupLocation.isNullOrBlank()
+                    ) {
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                            Text(
+                                text = stringResource(R.string.listing_meetup_title),
+                                style = MaterialTheme.typography.titleSmall,
+                            )
+                            Text(
+                                text = product.meetupLocation,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                            TextButton(
+                                onClick = {
+                                    val opened = GeoMapIntents.open(context, product.meetupLocation)
+                                    if (!opened) {
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(mapOpenFailedMessage)
+                                        }
+                                    }
+                                },
+                            ) {
+                                Text(stringResource(R.string.map_view_on_map))
+                            }
+                        }
+                    }
+                    if (showContactSeller) {
+                        OutlinedButton(
+                            onClick = { viewModel.contactSeller(onContactSeller) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                        ) {
+                            Text(stringResource(R.string.contact_seller))
+                        }
+                    }
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }

@@ -8,7 +8,7 @@
 
 - `Scaffold` + `TopAppBar`「发布挂牌」/「编辑挂牌」+ 返回
 - 单列 `Column` + `verticalScroll`
-- 顺序：图片选择区（1:1 虚线框 + 「选择图片」）→ 标题 → 价格 → 分类 Dropdown → 描述
+- 顺序：图片选择区（1:1 虚线框 + 「选择图片」）→ 标题 → 价格 → 分类 Dropdown → 描述 → **v3.3** 面交地点（可选，`OutlinedTextField` placeholder「如：XX 地铁站 A 口」）
 - 底部固定或表单末 **Primary Button**「发布」/「保存」（`tertiary` 绿，同 MVP CTA）
 
 ## Components

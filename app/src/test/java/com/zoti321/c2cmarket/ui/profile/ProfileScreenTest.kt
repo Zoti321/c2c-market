@@ -42,15 +42,37 @@ class ProfileScreenTest {
     fun profileScreen_showsGuestMode() {
         composeRule.setContent {
             ProfileScreen(
-                onOrderClick = {},
-                onProductClick = {},
-                onCreateListing = {},
-                onEditListing = {},
-                onManageAddresses = {},
+                callbacks = ProfileScreenCallbacks(
+                    onOrderClick = {},
+                    onProductClick = {},
+                    onCreateListing = {},
+                    onEditListing = {},
+                    onManageAddresses = {},
+                    onMessagesClick = {},
+                ),
                 viewModel = ScreenTestViewModels.guestProfile(),
             )
         }
         composeRule.waitForIdle()
         composeRule.onNodeWithText("游客模式").assertExists()
+    }
+
+    @Test
+    fun profileScreen_signedIn_showsDisplayName() {
+        composeRule.setContent {
+            ProfileScreen(
+                callbacks = ProfileScreenCallbacks(
+                    onOrderClick = {},
+                    onProductClick = {},
+                    onCreateListing = {},
+                    onEditListing = {},
+                    onManageAddresses = {},
+                    onMessagesClick = {},
+                ),
+                viewModel = ScreenTestViewModels.signedInProfile(displayName = "张三"),
+            )
+        }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("张三").assertExists()
     }
 }

@@ -1,5 +1,6 @@
 package com.zoti321.c2cmarket.ui.profile
 
+import android.app.Activity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,11 +10,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.LocationOn
@@ -23,20 +26,28 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -45,6 +56,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.zoti321.c2cmarket.R
+import com.zoti321.c2cmarket.domain.model.AuthState
 import com.zoti321.c2cmarket.domain.model.BrowseHistoryItem
 import com.zoti321.c2cmarket.domain.model.OrderSummary
 import com.zoti321.c2cmarket.domain.model.Product
@@ -59,15 +71,23 @@ import com.zoti321.c2cmarket.ui.common.userMessage
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    onOrderClick: (Long) -> Unit,
-    onProductClick: (Int) -> Unit,
-    onCreateListing: () -> Unit,
-    onEditListing: (Int) -> Unit,
-    onManageAddresses: () -> Unit,
+    callbacks: ProfileScreenCallbacks,
     modifier: Modifier = Modifier.testTag("profile_screen"),
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val authState by viewModel.authState.collectAsStateWithLifecycle()
+    val isSigningIn by viewModel.isSigningIn.collectAsStateWithLifecycle()
+    val signInError by viewModel.signInError.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+
+    LaunchedEffect(signInError) {
+        signInError?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearSignInError()
+        }
+    }
 
     Scaffold(
         modifier = modifier,
@@ -76,6 +96,7 @@ fun ProfileScreen(
                 title = { Text(stringResource(R.string.profile_title)) },
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         when (val state = uiState) {
             is UiState.Loading -> LoadingContent(Modifier.padding(innerPadding))
@@ -91,10 +112,35 @@ fun ProfileScreen(
                         .fillMaxSize()
                         .padding(innerPadding),
                 ) {
-                    item { GuestBanner() }
+                    item {
+                        AuthSection(
+                            authState = authState,
+                            isSigningIn = isSigningIn,
+                            onSignIn = {
+                                val activity = context as? Activity
+                                if (activity != null) {
+                                    viewModel.signInWithGoogle(activity)
+                                }
+                            },
+                            onSignOut = viewModel::signOut,
+                        )
+                    }
+                    item {
+                        ListItem(
+                            modifier = Modifier.clickable(onClick = callbacks.onMessagesClick),
+                            headlineContent = { Text(stringResource(R.string.profile_messages)) },
+                            leadingContent = {
+                                Icon(Icons.Outlined.Chat, contentDescription = null)
+                            },
+                            trailingContent = {
+                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+                            },
+                        )
+                        HorizontalDivider()
+                    }
                     item {
                         FilledTonalButton(
-                            onClick = onCreateListing,
+                            onClick = callbacks.onCreateListing,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -113,8 +159,8 @@ fun ProfileScreen(
                         items(data.myListings, key = { it.id }) { listing ->
                             MyListingRow(
                                 listing = listing,
-                                onClick = { onProductClick(listing.id) },
-                                onEdit = { onEditListing(listing.id) },
+                                onClick = { callbacks.onProductClick(listing.id) },
+                                onEdit = { callbacks.onEditListing(listing.id) },
                                 onDelete = { viewModel.deleteListing(listing.id) },
                             )
                             HorizontalDivider()
@@ -122,7 +168,7 @@ fun ProfileScreen(
                     }
                     item {
                         ListItem(
-                            modifier = Modifier.clickable(onClick = onManageAddresses),
+                            modifier = Modifier.clickable(onClick = callbacks.onManageAddresses),
                             headlineContent = { Text(stringResource(R.string.profile_addresses_entry)) },
                             leadingContent = {
                                 Icon(Icons.Outlined.LocationOn, contentDescription = null)
@@ -140,7 +186,7 @@ fun ProfileScreen(
                         item {
                             BrowseHistoryRow(
                                 items = data.browseHistory,
-                                onItemClick = onProductClick,
+                                onItemClick = callbacks.onProductClick,
                             )
                         }
                     }
@@ -162,7 +208,7 @@ fun ProfileScreen(
                         items(data.orders, key = { it.id }) { order ->
                             OrderCard(
                                 order = order,
-                                onClick = { onOrderClick(order.id) },
+                                onClick = { callbacks.onOrderClick(order.id) },
                             )
                             HorizontalDivider()
                         }
@@ -174,22 +220,90 @@ fun ProfileScreen(
 }
 
 @Composable
-fun GuestBanner(modifier: Modifier = Modifier) {
+fun AuthSection(
+    authState: AuthState,
+    isSigningIn: Boolean,
+    onSignIn: () -> Unit,
+    onSignOut: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .testTag("profile_auth_section"),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
         ),
     ) {
-        ListItem(
-            headlineContent = { Text(stringResource(R.string.profile_guest_mode)) },
-            leadingContent = {
-                Icon(Icons.Outlined.PersonOutline, contentDescription = null)
-            },
-        )
+        when (authState) {
+            AuthState.Guest -> {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.profile_guest_mode)) },
+                    leadingContent = {
+                        Icon(Icons.Outlined.PersonOutline, contentDescription = null)
+                    },
+                )
+                OutlinedButton(
+                    onClick = onSignIn,
+                    enabled = !isSigningIn,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 16.dp)
+                        .testTag("profile_sign_in_button"),
+                ) {
+                    if (isSigningIn) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .size(18.dp)
+                                .padding(end = 8.dp),
+                            strokeWidth = 2.dp,
+                        )
+                    }
+                    Text(stringResource(R.string.profile_sign_in_google))
+                }
+            }
+            is AuthState.SignedIn -> {
+                ListItem(
+                    headlineContent = { Text(authState.profile.displayName) },
+                    supportingContent = {
+                        authState.profile.email?.let { Text(it) }
+                    },
+                    leadingContent = {
+                        if (authState.profile.photoUrl != null) {
+                            AsyncImage(
+                                model = authState.profile.photoUrl,
+                                contentDescription = authState.profile.displayName,
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop,
+                            )
+                        } else {
+                            Icon(Icons.Outlined.PersonOutline, contentDescription = null)
+                        }
+                    },
+                    trailingContent = {
+                        TextButton(onClick = onSignOut) {
+                            Text(stringResource(R.string.profile_sign_out))
+                        }
+                    },
+                )
+            }
+        }
     }
+}
+
+@Composable
+fun GuestBanner(modifier: Modifier = Modifier) {
+    AuthSection(
+        authState = AuthState.Guest,
+        isSigningIn = false,
+        onSignIn = {},
+        onSignOut = {},
+        modifier = modifier,
+    )
 }
 
 @Composable

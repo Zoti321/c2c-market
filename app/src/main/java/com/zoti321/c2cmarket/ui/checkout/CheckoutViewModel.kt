@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zoti321.c2cmarket.domain.model.Address
 import com.zoti321.c2cmarket.domain.model.CartItem
+import com.zoti321.c2cmarket.domain.model.AuthState
 import com.zoti321.c2cmarket.domain.repository.AddressRepository
+import com.zoti321.c2cmarket.domain.repository.AuthRepository
 import com.zoti321.c2cmarket.domain.repository.CartRepository
 import com.zoti321.c2cmarket.domain.repository.OrderRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,6 +32,7 @@ sealed interface CheckoutEvent {
 class CheckoutViewModel @Inject constructor(
     cartRepository: CartRepository,
     addressRepository: AddressRepository,
+    authRepository: AuthRepository,
     private val orderRepository: OrderRepository,
 ) : ViewModel() {
 
@@ -62,6 +65,9 @@ class CheckoutViewModel @Inject constructor(
     val canPlaceOrder: StateFlow<Boolean> = selectedAddress
         .map { it != null }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    val authState: StateFlow<AuthState> = authRepository.observeAuthState()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AuthState.Guest)
 
     private val _isPlacingOrder = MutableStateFlow(false)
     val isPlacingOrder: StateFlow<Boolean> = _isPlacingOrder.asStateFlow()
