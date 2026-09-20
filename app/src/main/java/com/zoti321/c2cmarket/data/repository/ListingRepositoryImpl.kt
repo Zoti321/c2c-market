@@ -52,9 +52,9 @@ class ListingRepositoryImpl @Inject constructor(
         listingDao.getByCatalogId(catalogId)?.sellerId
 
     override suspend fun create(input: ListingInput): Result<Product> = runCatching {
-        validate(input)
+        validateListingInput(input)
         val now = System.currentTimeMillis()
-        val catalogId = nextCatalogId()
+        val catalogId = nextListingCatalogId(listingDao)
         val sellerId = authRepository.currentUserId().first()
         val entity = input.toEntity(catalogId, now, sellerId)
         listingDao.insert(entity)
@@ -62,7 +62,7 @@ class ListingRepositoryImpl @Inject constructor(
     }
 
     override suspend fun update(catalogId: Int, input: ListingInput): Result<Product> = runCatching {
-        validate(input)
+        validateListingInput(input)
         val existing = listingDao.getByCatalogId(catalogId)
             ?: throw ProductNotFoundException(catalogId)
         val now = System.currentTimeMillis()
@@ -95,19 +95,20 @@ class ListingRepositoryImpl @Inject constructor(
             .filter { it.title.lowercase().contains(normalized) }
     }
 
-    private suspend fun nextCatalogId(): Int {
-        val minId = listingDao.minCatalogId()
-        return if (minId == null) -1 else minId - 1
-    }
+}
 
-    private fun validate(input: ListingInput) {
-        val message = when {
-            input.title.isBlank() || input.title.length > 100 -> "标题无效"
-            input.price <= 0 -> "价格必须大于 0"
-            input.description.isBlank() || input.description.length > 500 -> "描述无效"
-            input.imageUri.isBlank() -> "请选择图片"
-            else -> null
-        }
-        if (message != null) throw InvalidListingException(message)
+private suspend fun nextListingCatalogId(listingDao: ListingDao): Int {
+    val minId = listingDao.minCatalogId()
+    return if (minId == null) -1 else minId - 1
+}
+
+private fun validateListingInput(input: ListingInput) {
+    val message = when {
+        input.title.isBlank() || input.title.length > 100 -> "标题无效"
+        input.price <= 0 -> "价格必须大于 0"
+        input.description.isBlank() || input.description.length > 500 -> "描述无效"
+        input.imageUri.isBlank() -> "请选择图片"
+        else -> null
     }
+    if (message != null) throw InvalidListingException(message)
 }

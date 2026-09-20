@@ -45,11 +45,13 @@ class ProductDetailViewModelTest {
         val browseHistory = RecordingBrowseHistoryRepository()
         val viewModel = ProductDetailViewModel(
             savedStateHandle = SavedStateHandle(mapOf(Routes.PRODUCT_ID_ARG to -1)),
-            productRepository = ThrowingProductRepository(),
-            listingRepository = FixedListingRepository(listingProduct),
-            cartRepository = NoOpCartRepository(),
-            favoriteRepository = NoOpFavoriteRepository(),
-            browseHistoryRepository = browseHistory,
+            productRepositories = ProductDetailProductRepositories(
+                productRepository = ThrowingProductRepository(),
+                listingRepository = FixedListingRepository(listingProduct),
+                cartRepository = NoOpCartRepository(),
+                favoriteRepository = NoOpFavoriteRepository(),
+                browseHistoryRepository = browseHistory,
+            ),
             chatRepository = NoOpChatRepository(),
             authRepository = FakeAuthRepository(),
         )

@@ -62,13 +62,14 @@ class GoogleCredentialDataSourceImpl @Inject constructor() : GoogleCredentialDat
             .build()
     }
 
-    private fun extractEmail(idToken: String?): String? {
-        if (idToken.isNullOrBlank()) return null
-        val parts = idToken.split(".")
-        if (parts.size < 2) return null
-        return runCatching {
-            val payload = String(Base64.decode(parts[1], Base64.URL_SAFE or Base64.NO_WRAP))
-            JSONObject(payload).optString("email").takeIf { it.isNotBlank() }
-        }.getOrNull()
-    }
+    private fun extractEmail(idToken: String?): String? =
+        idToken?.takeIf { it.isNotBlank() }
+            ?.split(".")
+            ?.takeIf { it.size >= 2 }
+            ?.let { parts ->
+                runCatching {
+                    val payload = String(Base64.decode(parts[1], Base64.URL_SAFE or Base64.NO_WRAP))
+                    JSONObject(payload).optString("email").takeIf { it.isNotBlank() }
+                }.getOrNull()
+            }
 }

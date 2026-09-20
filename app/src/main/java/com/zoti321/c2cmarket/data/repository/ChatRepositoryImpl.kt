@@ -2,6 +2,7 @@ package com.zoti321.c2cmarket.data.repository
 
 import android.content.Context
 import com.zoti321.c2cmarket.R
+import com.zoti321.c2cmarket.data.local.C2CDatabase
 import com.zoti321.c2cmarket.data.local.dao.ConversationDao
 import com.zoti321.c2cmarket.data.local.dao.ListingDao
 import com.zoti321.c2cmarket.data.local.dao.MessageDao
@@ -34,14 +35,16 @@ import kotlinx.coroutines.withContext
 
 @Singleton
 class ChatRepositoryImpl @Inject constructor(
-    private val conversationDao: ConversationDao,
-    private val messageDao: MessageDao,
-    private val listingDao: ListingDao,
+    database: C2CDatabase,
     private val authRepository: AuthRepository,
     @ApplicationContext private val context: Context,
     @ApplicationScope private val applicationScope: CoroutineScope,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : ChatRepository {
+
+    private val conversationDao: ConversationDao = database.conversationDao()
+    private val messageDao: MessageDao = database.messageDao()
+    private val listingDao: ListingDao = database.listingDao()
 
     override fun observeConversations(): Flow<List<Conversation>> =
         authRepository.currentUserId().flatMapLatest { buyerId ->
@@ -169,16 +172,16 @@ class ChatRepositoryImpl @Inject constructor(
     override fun observeDraft(conversationId: Long): Flow<String> =
         messageDao.observeDraft(conversationId)
 
-    private suspend fun resolveSeller(product: Product): MockSellerResolver.MockSeller? {
-        if (product.source == ProductSource.LOCAL_LISTING) {
-            val listing = listingDao.getByCatalogId(product.id) ?: return null
-            return MockSellerResolver.MockSeller(
-                sellerId = listing.sellerId,
-                sellerDisplayName = "挂牌卖家",
-            )
+    private suspend fun resolveSeller(product: Product): MockSellerResolver.MockSeller? =
+        when (product.source) {
+            ProductSource.LOCAL_LISTING -> listingDao.getByCatalogId(product.id)?.let { listing ->
+                MockSellerResolver.MockSeller(
+                    sellerId = listing.sellerId,
+                    sellerDisplayName = "挂牌卖家",
+                )
+            }
+            else -> MockSellerResolver.resolve(product)
         }
-        return MockSellerResolver.resolve(product)
-    }
 
     private fun scheduleMockReply(conversationId: Long, sellerId: String) {
         applicationScope.launch(ioDispatcher) {

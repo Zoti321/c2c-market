@@ -42,12 +42,14 @@ class ProfileScreenTest {
     fun profileScreen_showsGuestMode() {
         composeRule.setContent {
             ProfileScreen(
-                onOrderClick = {},
-                onProductClick = {},
-                onCreateListing = {},
-                onEditListing = {},
-                onManageAddresses = {},
-                onMessagesClick = {},
+                callbacks = ProfileScreenCallbacks(
+                    onOrderClick = {},
+                    onProductClick = {},
+                    onCreateListing = {},
+                    onEditListing = {},
+                    onManageAddresses = {},
+                    onMessagesClick = {},
+                ),
                 viewModel = ScreenTestViewModels.guestProfile(),
             )
         }
@@ -59,12 +61,14 @@ class ProfileScreenTest {
     fun profileScreen_signedIn_showsDisplayName() {
         composeRule.setContent {
             ProfileScreen(
-                onOrderClick = {},
-                onProductClick = {},
-                onCreateListing = {},
-                onEditListing = {},
-                onManageAddresses = {},
-                onMessagesClick = {},
+                callbacks = ProfileScreenCallbacks(
+                    onOrderClick = {},
+                    onProductClick = {},
+                    onCreateListing = {},
+                    onEditListing = {},
+                    onManageAddresses = {},
+                    onMessagesClick = {},
+                ),
                 viewModel = ScreenTestViewModels.signedInProfile(displayName = "张三"),
             )
         }

@@ -46,9 +46,7 @@ class ChatRepositoryImplTest {
         testScope = CoroutineScope(SupervisorJob() + testDispatcher)
         val context = ApplicationProvider.getApplicationContext<Application>()
         repository = ChatRepositoryImpl(
-            conversationDao = database.conversationDao(),
-            messageDao = database.messageDao(),
-            listingDao = database.listingDao(),
+            database = database,
             authRepository = FakeAuthRepository(),
             context = context,
             applicationScope = testScope,

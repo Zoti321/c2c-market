@@ -15,14 +15,19 @@ object DeepLinkParser {
     private const val HOST = "app"
 
     fun parse(uri: Uri): DeepLinkDestination? {
-        if (uri.scheme != SCHEME || uri.host != HOST) return null
+        if (uri.scheme != SCHEME || uri.host != HOST) {
+            return null
+        }
         val segments = uri.pathSegments
-        if (segments.size != 2) return null
-        return when (segments[0]) {
-            "product" -> segments[1].toIntOrNull()?.let { DeepLinkDestination.Product(it) }
-            "order" -> segments[1].toLongOrNull()?.let { DeepLinkDestination.Order(it) }
-            "chat" -> segments[1].toLongOrNull()?.let { DeepLinkDestination.Chat(it) }
-            else -> null
+        return if (segments.size != 2) {
+            null
+        } else {
+            when (segments[0]) {
+                "product" -> segments[1].toIntOrNull()?.let { DeepLinkDestination.Product(it) }
+                "order" -> segments[1].toLongOrNull()?.let { DeepLinkDestination.Order(it) }
+                "chat" -> segments[1].toLongOrNull()?.let { DeepLinkDestination.Chat(it) }
+                else -> null
+            }
         }
     }
 

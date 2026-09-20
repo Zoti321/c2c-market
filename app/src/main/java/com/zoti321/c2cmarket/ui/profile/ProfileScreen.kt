@@ -71,12 +71,7 @@ import com.zoti321.c2cmarket.ui.common.userMessage
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    onOrderClick: (Long) -> Unit,
-    onProductClick: (Int) -> Unit,
-    onCreateListing: () -> Unit,
-    onEditListing: (Int) -> Unit,
-    onManageAddresses: () -> Unit,
-    onMessagesClick: () -> Unit,
+    callbacks: ProfileScreenCallbacks,
     modifier: Modifier = Modifier.testTag("profile_screen"),
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
@@ -132,7 +127,7 @@ fun ProfileScreen(
                     }
                     item {
                         ListItem(
-                            modifier = Modifier.clickable(onClick = onMessagesClick),
+                            modifier = Modifier.clickable(onClick = callbacks.onMessagesClick),
                             headlineContent = { Text(stringResource(R.string.profile_messages)) },
                             leadingContent = {
                                 Icon(Icons.Outlined.Chat, contentDescription = null)
@@ -145,7 +140,7 @@ fun ProfileScreen(
                     }
                     item {
                         FilledTonalButton(
-                            onClick = onCreateListing,
+                            onClick = callbacks.onCreateListing,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -164,8 +159,8 @@ fun ProfileScreen(
                         items(data.myListings, key = { it.id }) { listing ->
                             MyListingRow(
                                 listing = listing,
-                                onClick = { onProductClick(listing.id) },
-                                onEdit = { onEditListing(listing.id) },
+                                onClick = { callbacks.onProductClick(listing.id) },
+                                onEdit = { callbacks.onEditListing(listing.id) },
                                 onDelete = { viewModel.deleteListing(listing.id) },
                             )
                             HorizontalDivider()
@@ -173,7 +168,7 @@ fun ProfileScreen(
                     }
                     item {
                         ListItem(
-                            modifier = Modifier.clickable(onClick = onManageAddresses),
+                            modifier = Modifier.clickable(onClick = callbacks.onManageAddresses),
                             headlineContent = { Text(stringResource(R.string.profile_addresses_entry)) },
                             leadingContent = {
                                 Icon(Icons.Outlined.LocationOn, contentDescription = null)
@@ -191,7 +186,7 @@ fun ProfileScreen(
                         item {
                             BrowseHistoryRow(
                                 items = data.browseHistory,
-                                onItemClick = onProductClick,
+                                onItemClick = callbacks.onProductClick,
                             )
                         }
                     }
@@ -213,7 +208,7 @@ fun ProfileScreen(
                         items(data.orders, key = { it.id }) { order ->
                             OrderCard(
                                 order = order,
-                                onClick = { onOrderClick(order.id) },
+                                onClick = { callbacks.onOrderClick(order.id) },
                             )
                             HorizontalDivider()
                         }

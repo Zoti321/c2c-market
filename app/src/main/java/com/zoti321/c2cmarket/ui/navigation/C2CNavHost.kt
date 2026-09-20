@@ -34,6 +34,7 @@ import com.zoti321.c2cmarket.ui.listing.CreateListingScreen
 import com.zoti321.c2cmarket.ui.order.OrderDetailScreen
 import com.zoti321.c2cmarket.ui.product.ProductDetailScreen
 import com.zoti321.c2cmarket.ui.profile.ProfileScreen
+import com.zoti321.c2cmarket.ui.profile.ProfileScreenCallbacks
 import com.zoti321.c2cmarket.ui.search.SearchScreen
 
 @Composable
@@ -129,18 +130,20 @@ fun C2CApp(deepLinkIntent: Intent? = null) {
 
             composable(Routes.PROFILE) {
                 ProfileScreen(
-                    onOrderClick = { orderId ->
-                        navController.navigate(Routes.order(orderId))
-                    },
-                    onProductClick = { id ->
-                        navController.navigate(Routes.product(id))
-                    },
-                    onCreateListing = { navController.navigate(Routes.CREATE_LISTING) },
-                    onEditListing = { catalogId ->
-                        navController.navigate(Routes.editListing(catalogId))
-                    },
-                    onManageAddresses = { navController.navigate(Routes.ADDRESS_LIST) },
-                    onMessagesClick = { navController.navigate(Routes.CONVERSATIONS) },
+                    callbacks = ProfileScreenCallbacks(
+                        onOrderClick = { orderId ->
+                            navController.navigate(Routes.order(orderId))
+                        },
+                        onProductClick = { id ->
+                            navController.navigate(Routes.product(id))
+                        },
+                        onCreateListing = { navController.navigate(Routes.CREATE_LISTING) },
+                        onEditListing = { catalogId ->
+                            navController.navigate(Routes.editListing(catalogId))
+                        },
+                        onManageAddresses = { navController.navigate(Routes.ADDRESS_LIST) },
+                        onMessagesClick = { navController.navigate(Routes.CONVERSATIONS) },
+                    ),
                 )
             }
 

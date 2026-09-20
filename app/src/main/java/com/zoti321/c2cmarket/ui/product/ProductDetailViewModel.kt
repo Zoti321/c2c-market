@@ -37,17 +37,27 @@ sealed interface ProductDetailEvent {
     data object Deleted : ProductDetailEvent
 }
 
+class ProductDetailProductRepositories @Inject constructor(
+    val productRepository: ProductRepository,
+    val listingRepository: ListingRepository,
+    val cartRepository: CartRepository,
+    val favoriteRepository: FavoriteRepository,
+    val browseHistoryRepository: BrowseHistoryRepository,
+)
+
 @HiltViewModel
 class ProductDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val productRepository: ProductRepository,
-    private val listingRepository: ListingRepository,
-    private val cartRepository: CartRepository,
-    private val favoriteRepository: FavoriteRepository,
-    private val browseHistoryRepository: BrowseHistoryRepository,
+    productRepositories: ProductDetailProductRepositories,
     private val chatRepository: ChatRepository,
     private val authRepository: AuthRepository,
 ) : ViewModel() {
+
+    private val productRepository = productRepositories.productRepository
+    private val listingRepository = productRepositories.listingRepository
+    private val cartRepository = productRepositories.cartRepository
+    private val favoriteRepository = productRepositories.favoriteRepository
+    private val browseHistoryRepository = productRepositories.browseHistoryRepository
 
     private val productId: Int = checkNotNull(savedStateHandle[Routes.PRODUCT_ID_ARG])
 
