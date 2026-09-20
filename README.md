@@ -59,7 +59,7 @@
 
 ### v4（当前阶段）
 
-**路线图**（[#41](https://github.com/Zoti321/c2c-market/issues/41)）**决策路线已完成**（#42–#47）；在 `feature/v4` 上按 canonical spec `/implement`，完成后单 PR 合入 `main`（`4.0.0`）。
+**路线图**（[#41](https://github.com/Zoti321/c2c-market/issues/41)）**v4 已交付**（`4.0.0`，`feature/v4` → 单 PR 合入 `main`）。Release 验收见 [`docs/release-smoke-v4.md`](docs/release-smoke-v4.md)。
 
 - [x] v4.1 卖家私信收件箱 + 双向聊天（[约定 v4.1 规格](https://github.com/Zoti321/c2c-market/issues/42)）
 - [x] v4.2 挂牌状态机 + 卖家订单视图（[约定 v4.2 规格](https://github.com/Zoti321/c2c-market/issues/43)）
