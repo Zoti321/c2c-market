@@ -88,4 +88,6 @@ jobs:
           keyPassword=ci-release
           keyAlias=release
           EOF
+      - name: Prepare local.properties for CI
+        run: echo "google.web_client_id=ci-placeholder.apps.googleusercontent.com" >> local.properties
       - run: ./gradlew assembleRelease --no-configuration-cache

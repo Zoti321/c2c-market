@@ -1,6 +1,7 @@
-package com.zoti321.c2cmarket.ui.profile
+package com.zoti321.c2cmarket.ui.chat
 
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import com.zoti321.c2cmarket.ui.fake.ScreenTestViewModels
 import kotlinx.coroutines.Dispatchers
@@ -21,7 +22,7 @@ import org.robolectric.annotation.GraphicsMode
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [33])
-class ProfileScreenTest {
+class ChatScreenTest {
 
     private val dispatcher = UnconfinedTestDispatcher()
 
@@ -39,36 +40,15 @@ class ProfileScreenTest {
     }
 
     @Test
-    fun profileScreen_showsGuestMode() {
+    fun chatScreen_showsInputAndSendButton() {
         composeRule.setContent {
-            ProfileScreen(
-                onOrderClick = {},
-                onProductClick = {},
-                onCreateListing = {},
-                onEditListing = {},
-                onManageAddresses = {},
-                onMessagesClick = {},
-                viewModel = ScreenTestViewModels.guestProfile(),
+            ChatScreen(
+                onBack = {},
+                viewModel = ScreenTestViewModels.chat(),
             )
         }
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("游客模式").assertExists()
-    }
-
-    @Test
-    fun profileScreen_signedIn_showsDisplayName() {
-        composeRule.setContent {
-            ProfileScreen(
-                onOrderClick = {},
-                onProductClick = {},
-                onCreateListing = {},
-                onEditListing = {},
-                onManageAddresses = {},
-                onMessagesClick = {},
-                viewModel = ScreenTestViewModels.signedInProfile(displayName = "张三"),
-            )
-        }
-        composeRule.waitForIdle()
-        composeRule.onNodeWithText("张三").assertExists()
+        composeRule.onNodeWithText("输入消息…").assertExists()
+        composeRule.onNodeWithContentDescription("发送").assertExists()
     }
 }

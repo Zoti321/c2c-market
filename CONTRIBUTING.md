@@ -42,9 +42,16 @@ git checkout -b feature/简短描述
 ./gradlew assembleDebug
 ./gradlew test                              # JVM 单测 + Compose UI 冒烟（Robolectric）
 ./gradlew lintDebug detekt                  # 静态分析（与 CI 一致）
-./gradlew jacocoDebugUnitTestReport         # 覆盖率报告
+./gradlew jacocoDebugUnitTestReport jacocoDebugUnitTestCoverageVerification  # 覆盖率报告 + 门禁（≥12% 行覆盖）
 ./gradlew assembleRelease                   # Release + R8（需 keystore.properties）
 ```
+
+Release 本地配置（均 gitignore，见模板）：
+
+- [`keystore.properties.example`](keystore.properties.example) — Release 签名
+- [`local.properties.example`](local.properties.example) — `google.web_client_id`（v3.2 Sign-In；Gradle 写入 `BuildConfig.GOOGLE_WEB_CLIENT_ID`）
+
+v3 Release 手工验收见 [`docs/release-smoke-v3.md`](docs/release-smoke-v3.md)。
 
 测试范围见 [约定 v2.5 测试范围与策略规格](https://github.com/Zoti321/c2c-market/issues/25)（Issue comment 全文）。
 
@@ -119,7 +126,7 @@ v2 已合入 `main`（[#19](https://github.com/Zoti321/c2c-market/issues/19) 关
 - 合并前必须通过 Required Status Checks
 - （可选）需要 PR Review
 
-> v2.6 起 CI 见 [`.github/workflows/android-ci.yml`](.github/workflows/android-ci.yml)：`lintDebug` + `detekt` + `test`（含 Robolectric Compose 冒烟）+ JaCoCo 覆盖率门禁 + `assembleRelease`（CI 临时 keystore）；`instrumented-tests` job 为 E2E 占位（不启模拟器，见 [ADR-0009](docs/adr/0009-robolectric-ui-smoke-and-ci-stub.md)）。Release 签名见 [`keystore.properties.example`](keystore.properties.example) 与 [约定 v2.6 Release、R8 与 CI 规格](https://github.com/Zoti321/c2c-market/issues/26)。
+> v2.6 起 CI 见 [`.github/workflows/android-ci.yml`](.github/workflows/android-ci.yml)：`lintDebug` + `detekt` + `test`（含 Robolectric Compose 冒烟）+ JaCoCo **12%** 行覆盖率门禁 + `assembleRelease`（CI 临时 keystore + 占位 `google.web_client_id`）；`instrumented-tests` job 为 E2E 占位（不启模拟器，见 [ADR-0009](docs/adr/0009-robolectric-ui-smoke-and-ci-stub.md)）。Release 配置见 [`keystore.properties.example`](keystore.properties.example)、[`local.properties.example`](local.properties.example) 与 [v3.5 Release 规格 (#34)](https://github.com/Zoti321/c2c-market/issues/34)。
 
 ## 相关文档
 

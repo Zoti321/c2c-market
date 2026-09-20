@@ -10,10 +10,10 @@ v2 功能完整后需可发布构建，且 PR 合入 `main` 应有自动化验�
 - 签名通过 **gitignore 的 `keystore.properties`** + 本地 `keystore/release.jks`；仓库仅提交 `keystore.properties.example`。
 - **CI**（GitHub Actions）在 PR/push 时跑四个并行 Job：
   1. **Lint + Detekt** — Android Lint（`lintDebug`）+ Kotlin 静态分析（`detekt`）
-  2. **单测 + 覆盖率** — `./gradlew test assembleDebug jacocoDebugUnitTestCoverageVerification`（行覆盖率门禁 ≥10%）
+  2. **单测 + 覆盖率** — `./gradlew test assembleDebug jacocoDebugUnitTestCoverageVerification`（行覆盖率门禁 ≥12%，v3.5 起）
   3. **仪器测试** — 模拟器上 `connectedDebugAndroidTest`
   4. **Release R8** — CI 生成临时 keystore 后 `assembleRelease`，验证 R8/ProGuard 规则
-- v2 版本 **2.0.0**（versionCode 2）。
+- v2 版本 **2.0.0**（versionCode 2）；v3 合入后为 **3.0.0**（versionCode 3）。
 
 ## 后果
 

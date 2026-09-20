@@ -1,4 +1,4 @@
-package com.zoti321.c2cmarket.ui.profile
+package com.zoti321.c2cmarket.ui.chat
 
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -21,7 +21,7 @@ import org.robolectric.annotation.GraphicsMode
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [33])
-class ProfileScreenTest {
+class ConversationListScreenTest {
 
     private val dispatcher = UnconfinedTestDispatcher()
 
@@ -39,36 +39,15 @@ class ProfileScreenTest {
     }
 
     @Test
-    fun profileScreen_showsGuestMode() {
+    fun conversationListScreen_showsEmptyState() {
         composeRule.setContent {
-            ProfileScreen(
-                onOrderClick = {},
-                onProductClick = {},
-                onCreateListing = {},
-                onEditListing = {},
-                onManageAddresses = {},
-                onMessagesClick = {},
-                viewModel = ScreenTestViewModels.guestProfile(),
+            ConversationListScreen(
+                onBack = {},
+                onConversationClick = {},
+                viewModel = ScreenTestViewModels.conversationList(),
             )
         }
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("游客模式").assertExists()
-    }
-
-    @Test
-    fun profileScreen_signedIn_showsDisplayName() {
-        composeRule.setContent {
-            ProfileScreen(
-                onOrderClick = {},
-                onProductClick = {},
-                onCreateListing = {},
-                onEditListing = {},
-                onManageAddresses = {},
-                onMessagesClick = {},
-                viewModel = ScreenTestViewModels.signedInProfile(displayName = "张三"),
-            )
-        }
-        composeRule.waitForIdle()
-        composeRule.onNodeWithText("张三").assertExists()
+        composeRule.onNodeWithText("暂无消息").assertExists()
     }
 }
