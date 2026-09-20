@@ -17,13 +17,14 @@ fun ListingEntity.toProduct(): Product = Product(
     source = ProductSource.LOCAL_LISTING,
 )
 
-fun ListingInput.toEntity(catalogId: Int, now: Long): ListingEntity = ListingEntity(
+fun ListingInput.toEntity(catalogId: Int, now: Long, sellerId: String): ListingEntity = ListingEntity(
     catalogId = catalogId,
     title = title.trim(),
     price = price,
     description = description.trim(),
     category = category,
     imageUri = imageUri,
+    sellerId = sellerId,
     createdAt = now,
     updatedAt = now,
 )

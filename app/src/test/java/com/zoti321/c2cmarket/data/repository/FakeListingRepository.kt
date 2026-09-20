@@ -22,6 +22,8 @@ class FakeListingRepository(
             ?.let { Result.success(it) }
             ?: Result.failure(IllegalStateException("not found"))
 
+    override suspend fun getSellerId(catalogId: Int): String? = "guest"
+
     override suspend fun create(input: ListingInput): Result<Product> =
         Result.failure(UnsupportedOperationException())
 

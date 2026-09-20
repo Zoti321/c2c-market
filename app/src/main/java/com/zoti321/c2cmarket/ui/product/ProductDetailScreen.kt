@@ -54,6 +54,7 @@ fun ProductDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isFavorite by viewModel.isFavorite.collectAsStateWithLifecycle()
     val isAddingToCart by viewModel.isAddingToCart.collectAsStateWithLifecycle()
+    val showContactSeller by viewModel.showContactSeller.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val addedToCartMessage = stringResource(R.string.product_added_to_cart)
     val actionFailedMessage = stringResource(R.string.product_action_failed)
@@ -180,7 +181,7 @@ fun ProductDetailScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     )
-                    if (product.source != ProductSource.LOCAL_LISTING) {
+                    if (showContactSeller) {
                         OutlinedButton(
                             onClick = { viewModel.contactSeller(onContactSeller) },
                             modifier = Modifier

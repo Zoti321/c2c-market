@@ -9,6 +9,7 @@ import com.zoti321.c2cmarket.domain.model.OrderSummary
 import com.zoti321.c2cmarket.domain.model.Product
 import com.zoti321.c2cmarket.domain.model.SearchResult
 import com.zoti321.c2cmarket.domain.model.ShippingInfo
+import com.zoti321.c2cmarket.data.repository.FakeAuthRepository
 import com.zoti321.c2cmarket.domain.repository.BrowseHistoryRepository
 import com.zoti321.c2cmarket.domain.repository.CartRepository
 import com.zoti321.c2cmarket.domain.repository.OrderRepository
@@ -79,5 +80,6 @@ object ScreenTestViewModels {
         orderRepository = EmptyOrderRepository(),
         browseHistoryRepository = EmptyBrowseHistoryRepository(),
         listingRepository = FakeListingRepository(),
+        authRepository = FakeAuthRepository(),
     )
 }

@@ -57,6 +57,7 @@ class OrderRepositoryImplTest {
         repository = OrderRepositoryImpl(
             orderDao = orderDao,
             cartDao = cartDao,
+            authRepository = FakeAuthRepository(),
             notificationHelper = NotificationHelper(ApplicationProvider.getApplicationContext()),
             orderNotificationScheduler = scheduler,
         )
@@ -146,6 +147,10 @@ private class FakeOrderDaoForOrder(
     }
 
     override fun observeAllOrders(): Flow<List<OrderEntity>> = flowOf(emptyList())
+
+    override fun observeOrdersByUserId(userId: String): Flow<List<OrderEntity>> = flowOf(emptyList())
+
+    override suspend fun migrateGuestOrders(newUserId: String) = Unit
 
     override fun observeOrder(id: Long): Flow<OrderEntity?> = flowOf(null)
 

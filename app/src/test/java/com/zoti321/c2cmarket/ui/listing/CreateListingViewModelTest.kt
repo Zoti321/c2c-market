@@ -75,6 +75,8 @@ private class SuccessfulListingRepository : ListingRepository {
     override suspend fun getProductByCatalogId(catalogId: Int): Result<Product> =
         Result.failure(IllegalStateException())
 
+    override suspend fun getSellerId(catalogId: Int): String? = "guest"
+
     override suspend fun create(input: ListingInput): Result<Product> = Result.success(
         Product(
             id = -1,

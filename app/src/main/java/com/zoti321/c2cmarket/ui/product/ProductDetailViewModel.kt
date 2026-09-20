@@ -3,8 +3,11 @@ package com.zoti321.c2cmarket.ui.product
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zoti321.c2cmarket.domain.MockSellerResolver
 import com.zoti321.c2cmarket.domain.error.ProductNotFoundException
+import com.zoti321.c2cmarket.domain.model.Product
 import com.zoti321.c2cmarket.domain.model.ProductSource
+import com.zoti321.c2cmarket.domain.repository.AuthRepository
 import com.zoti321.c2cmarket.domain.repository.BrowseHistoryRepository
 import com.zoti321.c2cmarket.domain.repository.CartRepository
 import com.zoti321.c2cmarket.domain.repository.ChatRepository
@@ -21,6 +24,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -41,6 +46,7 @@ class ProductDetailViewModel @Inject constructor(
     private val favoriteRepository: FavoriteRepository,
     private val browseHistoryRepository: BrowseHistoryRepository,
     private val chatRepository: ChatRepository,
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
 
     private val productId: Int = checkNotNull(savedStateHandle[Routes.PRODUCT_ID_ARG])
@@ -57,6 +63,15 @@ class ProductDetailViewModel @Inject constructor(
     private val _isAddingToCart = MutableStateFlow(false)
     val isAddingToCart: StateFlow<Boolean> = _isAddingToCart.asStateFlow()
 
+    private val _sellerId = MutableStateFlow<String?>(null)
+
+    val showContactSeller: StateFlow<Boolean> = combine(
+        _sellerId,
+        authRepository.currentUserId(),
+    ) { sellerId, currentUserId ->
+        sellerId != null && sellerId != currentUserId
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
     init {
         loadProduct()
     }
@@ -72,6 +87,7 @@ class ProductDetailViewModel @Inject constructor(
             _uiState.value = result.fold(
                 onSuccess = { product ->
                     browseHistoryRepository.recordView(product)
+                    _sellerId.value = resolveSellerId(product)
                     ProductDetailUiState.Success(product)
                 },
                 onFailure = { error ->
@@ -128,12 +144,19 @@ class ProductDetailViewModel @Inject constructor(
 
     fun contactSeller(onSuccess: (Long) -> Unit) {
         val product = (_uiState.value as? ProductDetailUiState.Success)?.product ?: return
-        if (product.source == ProductSource.LOCAL_LISTING) return
+        if (!showContactSeller.value) return
         viewModelScope.launch {
             chatRepository.getOrCreateConversation(product).fold(
                 onSuccess = { conversation -> onSuccess(conversation.id) },
                 onFailure = { _events.emit(ProductDetailEvent.ActionFailed) },
             )
         }
+    }
+
+    private suspend fun resolveSellerId(product: Product): String? {
+        if (product.source == ProductSource.LOCAL_LISTING) {
+            return listingRepository.getSellerId(product.id)
+        }
+        return MockSellerResolver.resolve(product)?.sellerId
     }
 }

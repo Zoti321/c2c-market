@@ -3,6 +3,7 @@ package com.zoti321.c2cmarket.data.repository
 import android.content.Context
 import com.zoti321.c2cmarket.R
 import com.zoti321.c2cmarket.data.local.dao.ConversationDao
+import com.zoti321.c2cmarket.data.local.dao.ListingDao
 import com.zoti321.c2cmarket.data.local.dao.MessageDao
 import com.zoti321.c2cmarket.data.local.dao.observeDraft
 import com.zoti321.c2cmarket.data.local.entity.MessageEntity
@@ -10,12 +11,13 @@ import com.zoti321.c2cmarket.data.mapper.toDomain
 import com.zoti321.c2cmarket.data.mapper.toEntityValue
 import com.zoti321.c2cmarket.di.ApplicationScope
 import com.zoti321.c2cmarket.di.IoDispatcher
-import com.zoti321.c2cmarket.domain.GuestSession
 import com.zoti321.c2cmarket.domain.MockSellerResolver
 import com.zoti321.c2cmarket.domain.model.Conversation
 import com.zoti321.c2cmarket.domain.model.Message
 import com.zoti321.c2cmarket.domain.model.MessageStatus
 import com.zoti321.c2cmarket.domain.model.Product
+import com.zoti321.c2cmarket.domain.model.ProductSource
+import com.zoti321.c2cmarket.domain.repository.AuthRepository
 import com.zoti321.c2cmarket.domain.repository.ChatRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -24,6 +26,8 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -32,14 +36,18 @@ import kotlinx.coroutines.withContext
 class ChatRepositoryImpl @Inject constructor(
     private val conversationDao: ConversationDao,
     private val messageDao: MessageDao,
+    private val listingDao: ListingDao,
+    private val authRepository: AuthRepository,
     @ApplicationContext private val context: Context,
     @ApplicationScope private val applicationScope: CoroutineScope,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : ChatRepository {
 
     override fun observeConversations(): Flow<List<Conversation>> =
-        conversationDao.observeAll(GuestSession.GUEST_ID).map { entities ->
-            entities.map { it.toDomain() }
+        authRepository.currentUserId().flatMapLatest { buyerId ->
+            conversationDao.observeAll(buyerId).map { entities ->
+                entities.map { it.toDomain() }
+            }
         }
 
     override fun observeMessages(conversationId: Long): Flow<List<Message>> =
@@ -50,9 +58,9 @@ class ChatRepositoryImpl @Inject constructor(
     override suspend fun getOrCreateConversation(product: Product): Result<Conversation> =
         withContext(ioDispatcher) {
             runCatching {
-                val seller = MockSellerResolver.resolve(product)
-                    ?: error("Cannot create conversation for local listing")
-                val buyerId = GuestSession.GUEST_ID
+                val seller = resolveSeller(product)
+                    ?: error("Cannot create conversation without seller")
+                val buyerId = authRepository.currentUserId().first()
                 val existing = conversationDao.findByUniqueKey(
                     buyerId = buyerId,
                     sellerId = seller.sellerId,
@@ -83,6 +91,7 @@ class ChatRepositoryImpl @Inject constructor(
 
     override suspend fun saveDraft(conversationId: Long, body: String) =
         withContext(ioDispatcher) {
+            val senderId = authRepository.currentUserId().first()
             if (body.isEmpty()) {
                 messageDao.deleteDraft(conversationId)
                 return@withContext
@@ -94,7 +103,7 @@ class ChatRepositoryImpl @Inject constructor(
                 messageDao.insert(
                     MessageEntity(
                         conversationId = conversationId,
-                        senderId = GuestSession.GUEST_ID,
+                        senderId = senderId,
                         body = body,
                         status = MessageStatus.DRAFT.toEntityValue(),
                         sentAt = null,
@@ -113,13 +122,14 @@ class ChatRepositoryImpl @Inject constructor(
 
                 val conversation = conversationDao.getById(conversationId)
                     ?: error("Conversation not found")
+                val senderId = authRepository.currentUserId().first()
 
                 messageDao.deleteDraft(conversationId)
                 val now = System.currentTimeMillis()
                 val messageId = messageDao.insert(
                     MessageEntity(
                         conversationId = conversationId,
-                        senderId = GuestSession.GUEST_ID,
+                        senderId = senderId,
                         body = trimmed,
                         status = MessageStatus.SENT.toEntityValue(),
                         sentAt = now,
@@ -140,7 +150,7 @@ class ChatRepositoryImpl @Inject constructor(
                 MessageEntity(
                     id = messageId,
                     conversationId = conversationId,
-                    senderId = GuestSession.GUEST_ID,
+                    senderId = senderId,
                     body = trimmed,
                     status = MessageStatus.SENT.toEntityValue(),
                     sentAt = now,
@@ -151,12 +161,24 @@ class ChatRepositoryImpl @Inject constructor(
 
     override suspend fun markConversationRead(conversationId: Long) =
         withContext(ioDispatcher) {
-            messageDao.markSellerMessagesRead(conversationId, GuestSession.GUEST_ID)
+            val buyerId = authRepository.currentUserId().first()
+            messageDao.markSellerMessagesRead(conversationId, buyerId)
             conversationDao.clearUnread(conversationId)
         }
 
     override fun observeDraft(conversationId: Long): Flow<String> =
         messageDao.observeDraft(conversationId)
+
+    private suspend fun resolveSeller(product: Product): MockSellerResolver.MockSeller? {
+        if (product.source == ProductSource.LOCAL_LISTING) {
+            val listing = listingDao.getByCatalogId(product.id) ?: return null
+            return MockSellerResolver.MockSeller(
+                sellerId = listing.sellerId,
+                sellerDisplayName = "挂牌卖家",
+            )
+        }
+        return MockSellerResolver.resolve(product)
+    }
 
     private fun scheduleMockReply(conversationId: Long, sellerId: String) {
         applicationScope.launch(ioDispatcher) {

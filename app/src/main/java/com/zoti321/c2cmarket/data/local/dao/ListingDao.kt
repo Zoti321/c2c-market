@@ -12,6 +12,12 @@ interface ListingDao {
     @Query("SELECT * FROM listings ORDER BY createdAt DESC")
     fun observeAll(): Flow<List<ListingEntity>>
 
+    @Query("SELECT * FROM listings WHERE sellerId = :sellerId ORDER BY createdAt DESC")
+    fun observeBySellerId(sellerId: String): Flow<List<ListingEntity>>
+
+    @Query("UPDATE listings SET sellerId = :newUserId WHERE sellerId = 'guest'")
+    suspend fun migrateGuestListings(newUserId: String)
+
     @Query("SELECT * FROM listings WHERE category = :category ORDER BY createdAt DESC")
     fun observeByCategory(category: String): Flow<List<ListingEntity>>
 

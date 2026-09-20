@@ -13,6 +13,8 @@ interface ListingRepository {
 
     suspend fun getProductByCatalogId(catalogId: Int): Result<Product>
 
+    suspend fun getSellerId(catalogId: Int): String?
+
     suspend fun create(input: ListingInput): Result<Product>
 
     suspend fun update(catalogId: Int, input: ListingInput): Result<Product>

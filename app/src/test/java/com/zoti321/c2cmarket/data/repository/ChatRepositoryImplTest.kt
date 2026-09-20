@@ -48,6 +48,8 @@ class ChatRepositoryImplTest {
         repository = ChatRepositoryImpl(
             conversationDao = database.conversationDao(),
             messageDao = database.messageDao(),
+            listingDao = database.listingDao(),
+            authRepository = FakeAuthRepository(),
             context = context,
             applicationScope = testScope,
             ioDispatcher = testDispatcher,

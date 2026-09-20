@@ -30,6 +30,7 @@ class ListingRepositoryImplTest {
             listingDao = database.listingDao(),
             cartDao = database.cartDao(),
             favoriteDao = database.favoriteDao(),
+            authRepository = FakeAuthRepository(),
         )
     }
 

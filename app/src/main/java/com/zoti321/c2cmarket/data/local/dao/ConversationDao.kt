@@ -37,6 +37,9 @@ interface ConversationDao {
     @Query("UPDATE conversations SET unreadCount = 0 WHERE id = :conversationId")
     suspend fun clearUnread(conversationId: Long)
 
+    @Query("UPDATE conversations SET buyerId = :newUserId WHERE buyerId = 'guest'")
+    suspend fun migrateGuestConversations(newUserId: String)
+
     @Query(
         """
         UPDATE conversations

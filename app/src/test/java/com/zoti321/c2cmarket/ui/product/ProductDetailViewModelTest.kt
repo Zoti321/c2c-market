@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import com.zoti321.c2cmarket.domain.model.Product
 import com.zoti321.c2cmarket.domain.model.ProductSource
 import com.zoti321.c2cmarket.domain.model.Rating
+import com.zoti321.c2cmarket.data.repository.FakeAuthRepository
 import com.zoti321.c2cmarket.domain.repository.BrowseHistoryRepository
 import com.zoti321.c2cmarket.domain.repository.CartRepository
 import com.zoti321.c2cmarket.domain.repository.ChatRepository
@@ -50,6 +51,7 @@ class ProductDetailViewModelTest {
             favoriteRepository = NoOpFavoriteRepository(),
             browseHistoryRepository = browseHistory,
             chatRepository = NoOpChatRepository(),
+            authRepository = FakeAuthRepository(),
         )
 
         val state = viewModel.uiState.value
@@ -97,6 +99,8 @@ private class FixedListingRepository(
 
     override suspend fun getProductByCatalogId(catalogId: Int): Result<Product> =
         if (catalogId == product.id) Result.success(product) else Result.failure(IllegalStateException())
+
+    override suspend fun getSellerId(catalogId: Int): String? = "guest"
 
     override suspend fun create(input: com.zoti321.c2cmarket.domain.model.ListingInput) =
         error("unused")

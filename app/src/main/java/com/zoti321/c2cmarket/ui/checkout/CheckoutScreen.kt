@@ -42,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.zoti321.c2cmarket.R
 import com.zoti321.c2cmarket.domain.model.Address
+import com.zoti321.c2cmarket.domain.model.AuthState
 import com.zoti321.c2cmarket.domain.model.CartItem
 import com.zoti321.c2cmarket.ui.address.AddressPickerBottomSheet
 import com.zoti321.c2cmarket.ui.common.ErrorContent
@@ -64,7 +65,9 @@ fun CheckoutScreen(
     val selectedAddressId by viewModel.selectedAddressId.collectAsStateWithLifecycle()
     val addresses by viewModel.addresses.collectAsStateWithLifecycle()
     val canPlaceOrder by viewModel.canPlaceOrder.collectAsStateWithLifecycle()
+    val authState by viewModel.authState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val guestHint = stringResource(R.string.checkout_guest_hint)
     val checkoutFailedMessage = stringResource(R.string.checkout_failed)
     var showAddressPicker by remember { mutableStateOf(false) }
 
@@ -149,7 +152,13 @@ fun CheckoutScreen(
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
-                        text = stringResource(R.string.checkout_guest_hint),
+                        text = when (val state = authState) {
+                            AuthState.Guest -> guestHint
+                            is AuthState.SignedIn -> stringResource(
+                                R.string.checkout_signed_in_hint,
+                                state.profile.displayName,
+                            )
+                        },
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 8.dp),

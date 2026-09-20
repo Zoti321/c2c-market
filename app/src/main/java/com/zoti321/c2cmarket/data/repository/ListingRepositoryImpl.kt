@@ -11,11 +11,13 @@ import com.zoti321.c2cmarket.data.mapper.toProduct
 import com.zoti321.c2cmarket.domain.error.ProductNotFoundException
 import com.zoti321.c2cmarket.domain.model.ListingInput
 import com.zoti321.c2cmarket.domain.model.Product
+import com.zoti321.c2cmarket.domain.repository.AuthRepository
 import com.zoti321.c2cmarket.domain.repository.ListingRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 
 @Singleton
@@ -24,6 +26,7 @@ class ListingRepositoryImpl @Inject constructor(
     private val listingDao: ListingDao,
     private val cartDao: CartDao,
     private val favoriteDao: FavoriteDao,
+    private val authRepository: AuthRepository,
 ) : ListingRepository {
 
     override fun observeAsProducts(): Flow<List<Product>> =
@@ -32,7 +35,12 @@ class ListingRepositoryImpl @Inject constructor(
     override fun observeByCategory(category: String): Flow<List<Product>> =
         listingDao.observeByCategory(category).map { listings -> listings.map { it.toProduct() } }
 
-    override fun observeMyListings(): Flow<List<Product>> = observeAsProducts()
+    override fun observeMyListings(): Flow<List<Product>> =
+        authRepository.currentUserId().flatMapLatest { sellerId ->
+            listingDao.observeBySellerId(sellerId).map { listings ->
+                listings.map { it.toProduct() }
+            }
+        }
 
     override suspend fun getProductByCatalogId(catalogId: Int): Result<Product> = runCatching {
         val entity = listingDao.getByCatalogId(catalogId)
@@ -40,11 +48,15 @@ class ListingRepositoryImpl @Inject constructor(
         entity.toProduct()
     }
 
+    override suspend fun getSellerId(catalogId: Int): String? =
+        listingDao.getByCatalogId(catalogId)?.sellerId
+
     override suspend fun create(input: ListingInput): Result<Product> = runCatching {
         validate(input)
         val now = System.currentTimeMillis()
         val catalogId = nextCatalogId()
-        val entity = input.toEntity(catalogId, now)
+        val sellerId = authRepository.currentUserId().first()
+        val entity = input.toEntity(catalogId, now, sellerId)
         listingDao.insert(entity)
         entity.toProduct()
     }
