@@ -15,6 +15,7 @@ fun ListingEntity.toProduct(): Product = Product(
     imageUrl = imageUri,
     rating = Rating(rate = 0.0, count = 0),
     source = ProductSource.LOCAL_LISTING,
+    meetupLocation = meetupLocation,
 )
 
 fun ListingInput.toEntity(catalogId: Int, now: Long, sellerId: String): ListingEntity = ListingEntity(
@@ -25,6 +26,7 @@ fun ListingInput.toEntity(catalogId: Int, now: Long, sellerId: String): ListingE
     category = category,
     imageUri = imageUri,
     sellerId = sellerId,
+    meetupLocation = meetupLocation?.trim()?.takeIf { it.isNotEmpty() },
     createdAt = now,
     updatedAt = now,
 )

@@ -9,4 +9,5 @@ data class Product(
     val imageUrl: String,
     val rating: Rating,
     val source: ProductSource = ProductSource.REMOTE,
+    val meetupLocation: String? = null,
 )

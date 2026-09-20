@@ -88,10 +88,16 @@ class OrderRepositoryImpl @Inject constructor(
         }
 
     override fun observeOrder(orderId: Long): Flow<Order?> =
-        combine(
-            orderDao.observeOrder(orderId),
-            orderDao.observeLineItems(orderId),
-        ) { order, lineItems ->
-            order?.toDomain(lineItems)
+        authRepository.currentUserId().flatMapLatest { userId ->
+            combine(
+                orderDao.observeOrder(orderId),
+                orderDao.observeLineItems(orderId),
+            ) { order, lineItems ->
+                when {
+                    order == null -> null
+                    order.guestId != userId -> null
+                    else -> order.toDomain(lineItems)
+                }
+            }
         }
 }

@@ -72,6 +72,7 @@ class ListingRepositoryImpl @Inject constructor(
             description = input.description.trim(),
             category = input.category,
             imageUri = input.imageUri,
+            meetupLocation = input.meetupLocation?.trim()?.takeIf { it.isNotEmpty() },
             updatedAt = now,
         )
         listingDao.update(updated)

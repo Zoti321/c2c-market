@@ -71,6 +71,18 @@ class ListingRepositoryImplTest {
     }
 
     @Test
+    fun create_persistsMeetupLocation() = runTest {
+        val listing = repository.create(
+            validInput("Meetup Item").copy(meetupLocation = "深圳湾公园"),
+        ).getOrThrow()
+
+        val stored = database.listingDao().getByCatalogId(listing.id)
+
+        assertEquals("深圳湾公园", stored?.meetupLocation)
+        assertEquals("深圳湾公园", repository.getProductByCatalogId(listing.id).getOrThrow().meetupLocation)
+    }
+
+    @Test
     fun observeByCategory_filtersListings() = runTest {
         repository.create(validInput("Phone", category = "electronics"))
         repository.create(validInput("Ring", category = "jewelery"))

@@ -12,8 +12,8 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import com.zoti321.c2cmarket.MainActivity
 import com.zoti321.c2cmarket.R
+import com.zoti321.c2cmarket.navigation.DeepLinkParser
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -45,9 +45,8 @@ class NotificationHelper @Inject constructor(
     fun showOrderShipped(orderId: Long, orderNumber: String) {
         if (!hasNotificationPermission()) return
         ensureChannel()
-        val intent = Intent(context, MainActivity::class.java).apply {
+        val intent = Intent(Intent.ACTION_VIEW, DeepLinkParser.orderUri(orderId)).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra(MainActivity.EXTRA_ORDER_ID, orderId)
         }
         val pendingIntent = PendingIntent.getActivity(
             context,

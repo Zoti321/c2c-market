@@ -1,18 +1,26 @@
 package com.zoti321.c2cmarket.ui.navigation
 
+import android.content.Intent
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import androidx.navigation.navigation
+import com.zoti321.c2cmarket.R
+import com.zoti321.c2cmarket.navigation.DeepLinkParser
 import com.zoti321.c2cmarket.ui.address.AddressFormScreen
 import com.zoti321.c2cmarket.ui.address.AddressListScreen
 import com.zoti321.c2cmarket.ui.cart.CartScreen
@@ -29,22 +37,26 @@ import com.zoti321.c2cmarket.ui.profile.ProfileScreen
 import com.zoti321.c2cmarket.ui.search.SearchScreen
 
 @Composable
-fun C2CApp(pendingOrderId: Long? = null) {
+fun C2CApp(deepLinkIntent: Intent? = null) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val showBottomBar = currentRoute in Routes.bottomNavRoutes ||
         currentRoute?.startsWith("category/") == true
+    val snackbarHostState = remember { SnackbarHostState() }
+    val invalidDeepLinkMessage = stringResource(R.string.deeplink_invalid)
 
-    LaunchedEffect(pendingOrderId) {
-        pendingOrderId?.let { orderId ->
-            navController.navigate(Routes.order(orderId)) {
-                launchSingleTop = true
-            }
+    LaunchedEffect(deepLinkIntent) {
+        val uri = deepLinkIntent?.data ?: return@LaunchedEffect
+        if (DeepLinkParser.parse(uri) == null) {
+            snackbarHostState.showSnackbar(invalidDeepLinkMessage)
+        } else {
+            navController.handleDeepLink(deepLinkIntent)
         }
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             if (showBottomBar) {
                 BottomNavBar(navController)
@@ -143,6 +155,11 @@ fun C2CApp(pendingOrderId: Long? = null) {
 
             composable(
                 route = Routes.CHAT,
+                deepLinks = listOf(
+                    navDeepLink {
+                        uriPattern = "c2cmarket://app/chat/{${Routes.CONVERSATION_ID_ARG}}"
+                    },
+                ),
                 arguments = listOf(
                     navArgument(Routes.CONVERSATION_ID_ARG) { type = NavType.LongType },
                 ),
@@ -154,6 +171,11 @@ fun C2CApp(pendingOrderId: Long? = null) {
 
             composable(
                 route = Routes.PRODUCT,
+                deepLinks = listOf(
+                    navDeepLink {
+                        uriPattern = "c2cmarket://app/product/{${Routes.PRODUCT_ID_ARG}}"
+                    },
+                ),
                 arguments = listOf(
                     navArgument(Routes.PRODUCT_ID_ARG) { type = NavType.IntType },
                 ),
@@ -184,6 +206,11 @@ fun C2CApp(pendingOrderId: Long? = null) {
 
             composable(
                 route = Routes.ORDER,
+                deepLinks = listOf(
+                    navDeepLink {
+                        uriPattern = "c2cmarket://app/order/{${Routes.ORDER_ID_ARG}}"
+                    },
+                ),
                 arguments = listOf(
                     navArgument(Routes.ORDER_ID_ARG) { type = NavType.LongType },
                 ),

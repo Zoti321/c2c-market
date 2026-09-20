@@ -155,6 +155,15 @@ fun CreateListingScreen(
                     .padding(vertical = 4.dp),
                 minLines = 3,
             )
+            OutlinedTextField(
+                value = uiState.meetupLocation,
+                onValueChange = viewModel::updateMeetupLocation,
+                label = { Text(stringResource(R.string.listing_field_meetup)) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                singleLine = true,
+            )
             ExposedDropdownMenuBox(
                 expanded = categoryExpanded,
                 onExpandedChange = { categoryExpanded = it },

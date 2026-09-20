@@ -16,11 +16,18 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -31,6 +38,7 @@ import com.zoti321.c2cmarket.R
 import com.zoti321.c2cmarket.domain.model.displayOrderNumber
 import com.zoti321.c2cmarket.domain.model.OrderLineItem
 import com.zoti321.c2cmarket.ui.common.ErrorContent
+import com.zoti321.c2cmarket.ui.common.GeoMapIntents
 import com.zoti321.c2cmarket.ui.common.LoadingContent
 import com.zoti321.c2cmarket.ui.common.formatOrderDateTime
 
@@ -42,9 +50,14 @@ fun OrderDetailScreen(
     viewModel: OrderDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val mapOpenFailedMessage = stringResource(R.string.map_open_failed)
 
     Scaffold(
         modifier = modifier,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.order_detail_title)) },
@@ -101,6 +114,18 @@ fun OrderDetailScreen(
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
+                            TextButton(
+                                onClick = {
+                                    val opened = GeoMapIntents.open(context, order.shipping.address)
+                                    if (!opened) {
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(mapOpenFailedMessage)
+                                        }
+                                    }
+                                },
+                            ) {
+                                Text(stringResource(R.string.map_view_on_map))
+                            }
                         }
                         HorizontalDivider()
                     } else {

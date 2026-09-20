@@ -6,4 +6,5 @@ data class ListingInput(
     val description: String,
     val category: String,
     val imageUri: String,
+    val meetupLocation: String? = null,
 )

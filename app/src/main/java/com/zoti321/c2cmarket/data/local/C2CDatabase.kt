@@ -32,7 +32,7 @@ import com.zoti321.c2cmarket.data.local.entity.OrderLineItemEntity
         ConversationEntity::class,
         MessageEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = true,
 )
 abstract class C2CDatabase : RoomDatabase() {

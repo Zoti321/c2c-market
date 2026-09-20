@@ -34,6 +34,12 @@
     <string name="product_not_found">商品不存在或已下架</string>
     <string name="product_image_error">图片加载失败</string>
     <string name="product_description">商品描述</string>
+    <string name="product_share">分享</string>
+    <string name="listing_field_meetup">面交地点（可选）</string>
+    <string name="listing_meetup_title">面交地点</string>
+    <string name="map_view_on_map">在地图中查看</string>
+    <string name="map_open_failed">未找到地图应用</string>
+    <string name="deeplink_invalid">无法打开链接</string>
 
     <!-- Cart -->
     <string name="cart_title">购物车</string>
