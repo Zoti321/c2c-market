@@ -115,21 +115,20 @@ Base URL: `https://fakestoreapi.com/`
 - Android SDK 37
 - 模拟器或真机（需联网）
 
-## 开发流程
+## 本地开发与验证
 
-采用 **Feature Branch → PR → CI Green → Merge to main** 工作流：在功能分支开发，经 Pull Request 合入 `main`，CI 全部通过后方可合并。
-
-**当前 v3 开发分支**：`feature/v3`（文档与代码均提交到此分支，v3 全部完成后再开 PR 合入 `main`）。详见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
-
-## 快速开始
+> Gradle Daemon 请使用 **JDK 17**（与 CI 一致；见 `.java-version`）。在 JDK 21+ 上 Detekt 可能无法运行。
 
 ```bash
-# 在项目根目录执行
 ./gradlew assembleDebug
-
-# 安装到已连接设备
 ./gradlew installDebug
+./gradlew test                              # JVM 单测 + Compose UI 冒烟（Robolectric）
+./gradlew lintDebug detekt                  # 静态分析（与 CI 一致）
+./gradlew jacocoDebugUnitTestReport jacocoDebugUnitTestCoverageVerification
+./gradlew assembleRelease                   # Release + R8（需 keystore.properties）
 ```
+
+Release 本地配置（均 gitignore，见 [`keystore.properties.example`](keystore.properties.example)、[`local.properties.example`](local.properties.example)）。
 
 > FakeStore **无需 API Key**，确保设备可访问互联网即可。
 
