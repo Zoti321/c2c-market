@@ -2,11 +2,17 @@ package com.zoti321.c2cmarket.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import com.zoti321.c2cmarket.data.local.dao.AddressDao
+import com.zoti321.c2cmarket.data.local.dao.BrowseHistoryDao
 import com.zoti321.c2cmarket.data.local.dao.CartDao
 import com.zoti321.c2cmarket.data.local.dao.FavoriteDao
+import com.zoti321.c2cmarket.data.local.dao.ListingDao
 import com.zoti321.c2cmarket.data.local.dao.OrderDao
+import com.zoti321.c2cmarket.data.local.entity.AddressEntity
+import com.zoti321.c2cmarket.data.local.entity.BrowseHistoryEntity
 import com.zoti321.c2cmarket.data.local.entity.CartItemEntity
 import com.zoti321.c2cmarket.data.local.entity.FavoriteEntity
+import com.zoti321.c2cmarket.data.local.entity.ListingEntity
 import com.zoti321.c2cmarket.data.local.entity.OrderEntity
 import com.zoti321.c2cmarket.data.local.entity.OrderLineItemEntity
 
@@ -16,8 +22,11 @@ import com.zoti321.c2cmarket.data.local.entity.OrderLineItemEntity
         FavoriteEntity::class,
         OrderEntity::class,
         OrderLineItemEntity::class,
+        BrowseHistoryEntity::class,
+        ListingEntity::class,
+        AddressEntity::class,
     ],
-    version = 2,
+    version = 5,
     exportSchema = true,
 )
 abstract class C2CDatabase : RoomDatabase() {
@@ -26,4 +35,10 @@ abstract class C2CDatabase : RoomDatabase() {
     abstract fun favoriteDao(): FavoriteDao
 
     abstract fun orderDao(): OrderDao
+
+    abstract fun browseHistoryDao(): BrowseHistoryDao
+
+    abstract fun listingDao(): ListingDao
+
+    abstract fun addressDao(): AddressDao
 }

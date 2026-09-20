@@ -1,0 +1,32 @@
+build:
+  maxIssues: 0
+
+config:
+  validation: true
+
+complexity:
+  LongMethod:
+    active: true
+    threshold: 80
+    ignoreAnnotated:
+      - Composable
+  CyclomaticComplexMethod:
+    active: true
+    ignoreAnnotated:
+      - Composable
+  LongParameterList:
+    active: true
+    functionThreshold: 8
+
+style:
+  MagicNumber:
+    active: false
+  MaxLineLength:
+    active: true
+    maxLineLength: 140
+
+naming:
+  FunctionNaming:
+    active: true
+    ignoreAnnotated:
+      - Composable

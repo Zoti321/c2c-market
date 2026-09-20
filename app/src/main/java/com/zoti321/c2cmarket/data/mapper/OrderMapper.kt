@@ -6,6 +6,7 @@ import com.zoti321.c2cmarket.domain.model.Order
 import com.zoti321.c2cmarket.domain.model.OrderLineItem
 import com.zoti321.c2cmarket.domain.model.OrderStatus
 import com.zoti321.c2cmarket.domain.model.OrderSummary
+import com.zoti321.c2cmarket.domain.model.ShippingInfo
 import java.time.Instant
 
 fun OrderLineItemEntity.toDomain(): OrderLineItem = OrderLineItem(
@@ -24,11 +25,27 @@ fun OrderEntity.toSummary(itemCount: Int): OrderSummary = OrderSummary(
     itemCount = itemCount,
 )
 
-fun OrderEntity.toDomain(lineItems: List<OrderLineItemEntity>): Order = Order(
-    id = id,
-    guestId = guestId,
-    items = lineItems.map { it.toDomain() },
-    totalAmount = totalAmount,
-    status = OrderStatus.valueOf(status),
-    createdAt = Instant.ofEpochMilli(createdAt),
-)
+fun OrderEntity.toDomain(lineItems: List<OrderLineItemEntity>): Order {
+    val shipping = if (
+        shippingReceiverName != null &&
+        shippingPhone != null &&
+        shippingAddress != null
+    ) {
+        ShippingInfo(
+            receiverName = shippingReceiverName,
+            phone = shippingPhone,
+            address = shippingAddress,
+        )
+    } else {
+        null
+    }
+    return Order(
+        id = id,
+        guestId = guestId,
+        items = lineItems.map { it.toDomain() },
+        totalAmount = totalAmount,
+        status = OrderStatus.valueOf(status),
+        createdAt = Instant.ofEpochMilli(createdAt),
+        shipping = shipping,
+    )
+}

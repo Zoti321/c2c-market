@@ -1,34 +1,53 @@
 package com.zoti321.c2cmarket.ui.profile
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.PersonOutline
 import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
 import com.zoti321.c2cmarket.R
+import com.zoti321.c2cmarket.domain.model.BrowseHistoryItem
 import com.zoti321.c2cmarket.domain.model.OrderSummary
+import com.zoti321.c2cmarket.domain.model.Product
 import com.zoti321.c2cmarket.domain.model.displayOrderNumber
 import com.zoti321.c2cmarket.ui.common.EmptyContent
 import com.zoti321.c2cmarket.ui.common.ErrorContent
@@ -41,7 +60,11 @@ import com.zoti321.c2cmarket.ui.common.userMessage
 @Composable
 fun ProfileScreen(
     onOrderClick: (Long) -> Unit,
-    modifier: Modifier = Modifier,
+    onProductClick: (Int) -> Unit,
+    onCreateListing: () -> Unit,
+    onEditListing: (Int) -> Unit,
+    onManageAddresses: () -> Unit,
+    modifier: Modifier = Modifier.testTag("profile_screen"),
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -62,13 +85,73 @@ fun ProfileScreen(
                 modifier = Modifier.padding(innerPadding),
             )
             is UiState.Success -> {
+                val data = state.data
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding),
                 ) {
                     item { GuestBanner() }
-                    if (state.data.isEmpty()) {
+                    item {
+                        FilledTonalButton(
+                            onClick = onCreateListing,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                        ) {
+                            Text(stringResource(R.string.listing_create_button))
+                        }
+                    }
+                    if (data.myListings.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = stringResource(R.string.profile_my_listings),
+                                style = MaterialTheme.typography.titleSmall,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            )
+                        }
+                        items(data.myListings, key = { it.id }) { listing ->
+                            MyListingRow(
+                                listing = listing,
+                                onClick = { onProductClick(listing.id) },
+                                onEdit = { onEditListing(listing.id) },
+                                onDelete = { viewModel.deleteListing(listing.id) },
+                            )
+                            HorizontalDivider()
+                        }
+                    }
+                    item {
+                        ListItem(
+                            modifier = Modifier.clickable(onClick = onManageAddresses),
+                            headlineContent = { Text(stringResource(R.string.profile_addresses_entry)) },
+                            leadingContent = {
+                                Icon(Icons.Outlined.LocationOn, contentDescription = null)
+                            },
+                            trailingContent = {
+                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+                            },
+                        )
+                        HorizontalDivider()
+                    }
+                    if (data.browseHistory.isNotEmpty()) {
+                        item {
+                            BrowseHistoryHeader(onClear = viewModel::clearBrowseHistory)
+                        }
+                        item {
+                            BrowseHistoryRow(
+                                items = data.browseHistory,
+                                onItemClick = onProductClick,
+                            )
+                        }
+                    }
+                    item {
+                        Text(
+                            text = stringResource(R.string.profile_orders_section),
+                            style = MaterialTheme.typography.titleSmall,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        )
+                    }
+                    if (data.orders.isEmpty()) {
                         item {
                             EmptyContent(
                                 icon = Icons.Outlined.ReceiptLong,
@@ -76,14 +159,7 @@ fun ProfileScreen(
                             )
                         }
                     } else {
-                        item {
-                            Text(
-                                text = stringResource(R.string.profile_orders_section),
-                                style = MaterialTheme.typography.titleSmall,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            )
-                        }
-                        items(state.data, key = { it.id }) { order ->
+                        items(data.orders, key = { it.id }) { order ->
                             OrderCard(
                                 order = order,
                                 onClick = { onOrderClick(order.id) },
@@ -114,6 +190,83 @@ fun GuestBanner(modifier: Modifier = Modifier) {
             },
         )
     }
+}
+
+@Composable
+private fun BrowseHistoryHeader(onClear: () -> Unit) {
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.browse_history_title)) },
+        trailingContent = {
+            TextButton(onClick = onClear) {
+                Text(stringResource(R.string.browse_history_clear))
+            }
+        },
+    )
+}
+
+@Composable
+private fun BrowseHistoryRow(
+    items: List<BrowseHistoryItem>,
+    onItemClick: (Int) -> Unit,
+) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(items, key = { it.productId }) { item ->
+            Card(
+                modifier = Modifier
+                    .width(120.dp)
+                    .clickable { onItemClick(item.productId) },
+            ) {
+                Column(modifier = Modifier.padding(8.dp)) {
+                    AsyncImage(
+                        model = item.imageUrl,
+                        contentDescription = item.title,
+                        modifier = Modifier
+                            .size(64.dp)
+                            .align(Alignment.CenterHorizontally),
+                        contentScale = ContentScale.Crop,
+                    )
+                    Text(
+                        text = item.title,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Text(
+                        text = stringResource(R.string.price_format, item.price),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.tertiary,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MyListingRow(
+    listing: Product,
+    onClick: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    ListItem(
+        modifier = Modifier.clickable(onClick = onClick),
+        headlineContent = { Text(listing.title, maxLines = 1) },
+        supportingContent = {
+            Text(stringResource(R.string.price_format, listing.price))
+        },
+        trailingContent = {
+            IconButton(onClick = onEdit) {
+                Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.listing_edit))
+            }
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.cart_delete))
+            }
+        },
+    )
 }
 
 @Composable

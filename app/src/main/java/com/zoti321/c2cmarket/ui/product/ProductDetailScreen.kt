@@ -1,16 +1,17 @@
 package com.zoti321.c2cmarket.ui.product
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,12 +28,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zoti321.c2cmarket.R
+import com.zoti321.c2cmarket.domain.model.ProductSource
 import com.zoti321.c2cmarket.ui.category.categoryDisplayName
 import com.zoti321.c2cmarket.ui.common.ErrorContent
 import com.zoti321.c2cmarket.ui.common.LoadingContent
@@ -43,6 +44,7 @@ import com.zoti321.c2cmarket.ui.product.components.ProductHeroImage
 @Composable
 fun ProductDetailScreen(
     onBack: () -> Unit,
+    onEditListing: (Int) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProductDetailViewModel = hiltViewModel(),
 ) {
@@ -50,15 +52,20 @@ fun ProductDetailScreen(
     val isFavorite by viewModel.isFavorite.collectAsStateWithLifecycle()
     val isAddingToCart by viewModel.isAddingToCart.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val context = LocalContext.current
+    val addedToCartMessage = stringResource(R.string.product_added_to_cart)
+    val actionFailedMessage = stringResource(R.string.product_action_failed)
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
-            val message = when (event) {
-                ProductDetailEvent.AddedToCart -> context.getString(R.string.product_added_to_cart)
-                ProductDetailEvent.ActionFailed -> context.getString(R.string.product_action_failed)
+            when (event) {
+                ProductDetailEvent.AddedToCart -> {
+                    snackbarHostState.showSnackbar(addedToCartMessage)
+                }
+                ProductDetailEvent.ActionFailed -> {
+                    snackbarHostState.showSnackbar(actionFailedMessage)
+                }
+                ProductDetailEvent.Deleted -> onBack()
             }
-            snackbarHostState.showSnackbar(message)
         }
     }
 
@@ -70,6 +77,19 @@ fun ProductDetailScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
+                    }
+                },
+                actions = {
+                    if (viewModel.isLocalListing()) {
+                        val productId = (uiState as? ProductDetailUiState.Success)?.product?.id
+                        if (productId != null) {
+                            IconButton(onClick = { onEditListing(productId) }) {
+                                Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.listing_edit))
+                            }
+                            IconButton(onClick = viewModel::deleteListing) {
+                                Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.cart_delete))
+                            }
+                        }
                     }
                 },
             )
@@ -119,27 +139,37 @@ fun ProductDetailScreen(
                         color = MaterialTheme.colorScheme.tertiary,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     )
-                    Text(
-                        text = product.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                    )
+                    Row(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        Text(
+                            text = product.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (product.source == ProductSource.LOCAL_LISTING) {
+                            AssistChip(
+                                onClick = {},
+                                label = { Text(stringResource(R.string.listing_chip)) },
+                            )
+                        }
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
                     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                         AssistChip(
                             onClick = {},
                             label = { Text(categoryDisplayName(product.category)) },
                         )
-                        Text(
-                            text = stringResource(
-                                R.string.rating_format,
-                                product.rating.rate,
-                                product.rating.count,
-                            ),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 4.dp),
-                        )
+                        if (product.source != ProductSource.LOCAL_LISTING) {
+                            Text(
+                                text = stringResource(
+                                    R.string.rating_format,
+                                    product.rating.rate,
+                                    product.rating.count,
+                                ),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                        }
                     }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
                     Text(

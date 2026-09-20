@@ -1,6 +1,6 @@
 # C2C Market（原生 Android 学习项目）
 
-> **路线图**：[C2C Market MVP — 路线图 (#1)](https://github.com/Zoti321/c2c-market/issues/1)
+> **路线图**：[C2C Market v2 — 路线图 (#19)](https://github.com/Zoti321/c2c-market/issues/19) · MVP 已交付 ([#1](https://github.com/Zoti321/c2c-market/issues/1) · [#11](https://github.com/Zoti321/c2c-market/issues/11))
 
 通过开发一个买家闭环的 C2C 市场应用，系统学习原生 Android 开发。项目基于 **Kotlin + Jetpack Compose + Material 3 + Hilt**，逐步引入网络请求、Paging、Room 本地存储与 MVVM 架构分层。
 
@@ -29,25 +29,25 @@
 
 ## 功能范围
 
-### MVP（当前阶段）
-
-**路线图**（[#1](https://github.com/Zoti321/c2c-market/issues/1)）跟踪**决策、规格与验收**；代码在规格锁定后用 `/implement` 执行（路线图不挂实现票）。
+### MVP（已交付）
 
 - [x] 项目骨架：Hilt + Theme + NavHost + Bottom Nav（4 Tab）
-- [ ] 决策票：FakeStore 调研、MVP 边界、UI 原型、各模块规格（见 [#1](https://github.com/Zoti321/c2c-market/issues/1)）
-- [ ] `/implement`：首页 Paging + FakeStore → 分类 → 详情 → Room 购物车/收藏 → Mock 结算 → 订单与三态 UI
-- [ ] [MVP 验收 (#11)](https://github.com/Zoti321/c2c-market/issues/11)（以 #5 锁定的清单为准）
+- [x] 决策票：FakeStore 调研、MVP 边界、UI 原型、各模块规格（[#1](https://github.com/Zoti321/c2c-market/issues/1)）
+- [x] 买家闭环：首页 Paging → 分类 → 详情 → Room 购物车/收藏 → Mock 结算 → 订单（PR #18）
+- [x] [MVP 验收 (#11)](https://github.com/Zoti321/c2c-market/issues/11)
 
-**MVP 明确不做**：登录、真支付、发布挂牌、聊天、Push、地图
+规格见 [锁定 MVP 功能边界与验收标准](https://github.com/Zoti321/c2c-market/issues/5)（Issue comment 全文）。
 
-### v2 扩展
+### v2（当前阶段）
 
-- v2.1 搜索 + 浏览历史
-- v2.2 发布挂牌（相册选图 + 本地 URI）
-- v2.3 地址 CRUD
-- v2.4 WorkManager + 通知
-- v2.5 测试
-- v2.6 Release + R8
+**路线图**（[#19](https://github.com/Zoti321/c2c-market/issues/19)）跟踪**决策、规格与验收**；代码在规格锁定后用 `/implement` 执行（路线图不挂实现票）。
+
+- [x] v2.1 搜索 + 浏览历史（[约定 v2.1 搜索与浏览历史规格](https://github.com/Zoti321/c2c-market/issues/21)）
+- [x] v2.2 发布挂牌（[约定 v2.2 发布挂牌规格](https://github.com/Zoti321/c2c-market/issues/22)）
+- [x] v2.3 地址 CRUD（[约定 v2.3 收货地址 CRUD 与结算集成规格](https://github.com/Zoti321/c2c-market/issues/23)）
+- [x] v2.4 WorkManager + 通知（[约定 v2.4 WorkManager 与本地通知规格](https://github.com/Zoti321/c2c-market/issues/24)）
+- [x] v2.5 测试（[约定 v2.5 测试范围与策略规格](https://github.com/Zoti321/c2c-market/issues/25)）
+- [x] v2.6 Release + R8（[约定 v2.6 Release、R8 与 CI 规格](https://github.com/Zoti321/c2c-market/issues/26)）
 
 ### v3（可选）
 
@@ -109,7 +109,7 @@ Base URL: `https://fakestoreapi.com/`
 ## 环境要求
 
 - Android Studio（推荐最新稳定版）
-- JDK 17
+- **JDK 17**（Gradle Daemon 与 CI 均使用 17；仓库根目录有 `.java-version`）
 - Android SDK 37
 - 模拟器或真机（需联网）
 
@@ -117,7 +117,7 @@ Base URL: `https://fakestoreapi.com/`
 
 采用 **Feature Branch → PR → CI Green → Merge to main** 工作流：在功能分支开发，经 Pull Request 合入 `main`，CI 全部通过后方可合并。
 
-**当前 MVP 开发分支**：`feature/mvp-roadmap`（文档与代码均提交到此分支）。详见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
+**当前 v2 开发分支**：`feature/v2`（文档与代码均提交到此分支，v2 全部完成后再开 PR 合入 `main`）。详见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
 
 ## 快速开始
 

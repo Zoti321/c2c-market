@@ -1,7 +1,7 @@
 # C2C Market MVP UI 原型
 
 > **关联 Issue**：[设计商品列表、详情与购物车 UI 布局](https://github.com/Zoti321/c2c-market/issues/7)  
-> **规格依据**：[`docs/spec/mvp-scope.md`](../spec/mvp-scope.md)  
+> **规格依据**：[锁定 MVP 功能边界与验收标准](https://github.com/Zoti321/c2c-market/issues/5)  
 > **设计系统**：[`design-system/c2c-market/MASTER.md`](../../design-system/c2c-market/MASTER.md)（ui-ux-pro-max 生成）
 
 ## 设计方向（ui-ux-pro-max 摘要）

@@ -43,3 +43,15 @@ Used by `/wayfinder`. The **map** is a single issue with **child** issues as tic
 - **Frontier query**: list the map's open children (`gh issue list --state open`, scoped to the map's sub-issues / task list), drop any with an open blocker (`issue_dependencies_summary.blocked_by > 0`, or an open issue in the `Blocked by` line) or an assignee; first in map order wins.
 - **Claim**: `gh issue edit <n> --add-assignee @me` — the session's first write.
 - **Resolve**: `gh issue comment <n> --body "<answer>"`, then `gh issue close <n>`, then append a context pointer (gist + link) to the map's Decisions-so-far.
+
+## Where specs live
+
+| 类型 | 存放处 | 说明 |
+|------|--------|------|
+| **功能规格**（MVP / v2 切片） | **GitHub Issue** — comment 内 `## Specification (canonical)` 全文 | **不在** 仓库 `docs/spec/` 维护 |
+| **架构决策** | [`docs/adr/`](../adr/) | 简短；可链 Issue |
+| **设计** | [`design-system/`](../design/)、`docs/design/` | 可链 Issue |
+
+读取规格：`gh issue view <n> --comments`（取 canonical comment）。
+
+地图 **Decisions so far** 只链 Issue 标题，不链仓库内 spec 文件。

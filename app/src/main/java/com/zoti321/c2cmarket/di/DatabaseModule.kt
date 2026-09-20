@@ -4,8 +4,14 @@ import android.content.Context
 import androidx.room.Room
 import com.zoti321.c2cmarket.data.local.C2CDatabase
 import com.zoti321.c2cmarket.data.local.MIGRATION_1_2
+import com.zoti321.c2cmarket.data.local.MIGRATION_2_3
+import com.zoti321.c2cmarket.data.local.MIGRATION_3_4
+import com.zoti321.c2cmarket.data.local.MIGRATION_4_5
+import com.zoti321.c2cmarket.data.local.dao.AddressDao
+import com.zoti321.c2cmarket.data.local.dao.BrowseHistoryDao
 import com.zoti321.c2cmarket.data.local.dao.CartDao
 import com.zoti321.c2cmarket.data.local.dao.FavoriteDao
+import com.zoti321.c2cmarket.data.local.dao.ListingDao
 import com.zoti321.c2cmarket.data.local.dao.OrderDao
 import dagger.Module
 import dagger.Provides
@@ -26,7 +32,12 @@ object DatabaseModule {
             C2CDatabase::class.java,
             "c2c_market.db",
         )
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(
+                MIGRATION_1_2,
+                MIGRATION_2_3,
+                MIGRATION_3_4,
+                MIGRATION_4_5,
+            )
             .build()
 
     @Provides
@@ -37,4 +48,14 @@ object DatabaseModule {
 
     @Provides
     fun provideOrderDao(database: C2CDatabase): OrderDao = database.orderDao()
+
+    @Provides
+    fun provideBrowseHistoryDao(database: C2CDatabase): BrowseHistoryDao =
+        database.browseHistoryDao()
+
+    @Provides
+    fun provideListingDao(database: C2CDatabase): ListingDao = database.listingDao()
+
+    @Provides
+    fun provideAddressDao(database: C2CDatabase): AddressDao = database.addressDao()
 }

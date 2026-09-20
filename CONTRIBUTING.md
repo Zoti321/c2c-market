@@ -36,10 +36,17 @@ git checkout -b feature/简短描述
 
 ### 2. 开发与本地验证
 
+> Gradle Daemon 请使用 **JDK 17**（与 CI 一致；见 `.java-version`）。在 JDK 21+ 上 Detekt 可能无法运行。
+
 ```bash
 ./gradlew assembleDebug
-./gradlew test
+./gradlew test                              # JVM 单测 + Compose UI 冒烟（Robolectric）
+./gradlew lintDebug detekt                  # 静态分析（与 CI 一致）
+./gradlew jacocoDebugUnitTestReport         # 覆盖率报告
+./gradlew assembleRelease                   # Release + R8（需 keystore.properties）
 ```
+
+测试范围见 [约定 v2.5 测试范围与策略规格](https://github.com/Zoti321/c2c-market/issues/25)（Issue comment 全文）。
 
 提交信息使用**简体中文**，聚焦「为什么」而非罗列文件。
 
@@ -70,39 +77,39 @@ git pull origin main
 git branch -d feature/简短描述
 ```
 
-## 当前 MVP 开发分支
+## 当前 v2 开发分支
 
-MVP 阶段的所有变更——**文档、规格落地与 `/implement` 代码**——统一提交到：
+v2 阶段的所有变更——**文档、规格落地与 `/implement` 代码**——统一提交到：
 
 ```
-feature/mvp-roadmap
+feature/v2
 ```
 
 | 变更类型 | 示例 | 提交到 |
 |---------|------|--------|
-| 路线图 / 工作流文档 | `CONTRIBUTING.md`、README 路线图链接 | `feature/mvp-roadmap` |
-| 规格产出 | research 文档、设计原型、ADR 补充 | `feature/mvp-roadmap` |
-| MVP 功能代码 | FakeStore、Paging、Room、结算等 | `feature/mvp-roadmap` |
+| 路线图 / 工作流文档 | `CONTRIBUTING.md`、README 路线图链接 | `feature/v2` |
+| 规格产出 | research 文档、设计原型、ADR 补充 | `feature/v2` |
+| v2 功能代码 | 搜索、挂牌、地址、WorkManager 等 | `feature/v2` |
 
 ```bash
-git checkout feature/mvp-roadmap
-git pull origin feature/mvp-roadmap   # 首次推送后
+git checkout feature/v2
+git pull origin feature/v2
 # 开发、commit…
-git push origin feature/mvp-roadmap
+git push origin feature/v2
 ```
 
-MVP 全部完成并通过 [#11 验收](https://github.com/Zoti321/c2c-market/issues/11) 后，将 `feature/mvp-roadmap` 以 **一个 PR** 合入 `main`（或按模块拆分为多个 PR，由你决定）。
+v2 全部完成并通过各切片验收后，将 `feature/v2` 以 **一个 PR** 合入 `main`。
 
-> 不要在 `main` 上直接开发 MVP；`main` 保持可发布基线。
+> 不要在 `main` 上直接开发 v2；`main` 保持 MVP 可发布基线。
 
 ## 与路线图的关系
 
-本仓库的 [MVP 路线图 (#1)](https://github.com/Zoti321/c2c-market/issues/1) 跟踪**决策、规格与验收**，不跟踪实现票：
+MVP 已合入 `main`（[#1](https://github.com/Zoti321/c2c-market/issues/1) 关闭、[#11](https://github.com/Zoti321/c2c-market/issues/11) 验收通过）。当前 [v2 路线图 (#19)](https://github.com/Zoti321/c2c-market/issues/19) 跟踪**决策、规格与验收**，不跟踪实现票：
 
-1. **Wayfinder 决策票** — 锁定规格（research / grilling / prototype）
-2. **`/implement`** — 在 `feature/mvp-roadmap` 上按规格写代码
-3. **PR + CI** — 本文件描述的合并流程
-4. **[MVP 验收 (#11)](https://github.com/Zoti321/c2c-market/issues/11)** — 规格与代码就绪后手工验收
+1. **Wayfinder 决策票** — 锁定各切片规格（全文在 **GitHub Issue comment**，见 [`issue-tracker.md`](docs/agents/issue-tracker.md)）
+2. **`/implement`** — 在 `feature/v2` 上按 Issue canonical spec 写代码（`gh issue view <n> --comments`）
+3. **PR + CI** — v2 全部完成后开一个 PR 合入 `main`
+4. **验收票** — 各切片代码就绪后手工验收
 
 ## 分支保护（目标配置）
 
@@ -112,7 +119,7 @@ MVP 全部完成并通过 [#11 验收](https://github.com/Zoti321/c2c-market/iss
 - 合并前必须通过 Required Status Checks
 - （可选）需要 PR Review
 
-> CI Workflow 配置就绪后，在 GitHub 仓库 Settings → Branches 中启用上述规则。
+> v2.6 起 CI 见 [`.github/workflows/android-ci.yml`](.github/workflows/android-ci.yml)：`lintDebug` + `detekt` + `test`（含 Robolectric Compose 冒烟）+ JaCoCo 覆盖率门禁 + `assembleRelease`（CI 临时 keystore）；`instrumented-tests` job 为 E2E 占位（不启模拟器，见 [ADR-0009](docs/adr/0009-robolectric-ui-smoke-and-ci-stub.md)）。Release 签名见 [`keystore.properties.example`](keystore.properties.example) 与 [约定 v2.6 Release、R8 与 CI 规格](https://github.com/Zoti321/c2c-market/issues/26)。
 
 ## 相关文档
 

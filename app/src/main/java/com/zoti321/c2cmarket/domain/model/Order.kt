@@ -17,6 +17,7 @@ data class Order(
     val totalAmount: Double,
     val status: OrderStatus,
     val createdAt: Instant,
+    val shipping: ShippingInfo? = null,
 )
 
 data class OrderSummary(

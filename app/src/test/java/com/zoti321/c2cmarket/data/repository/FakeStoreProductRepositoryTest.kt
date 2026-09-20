@@ -33,7 +33,7 @@ class FakeStoreProductRepositoryTest {
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
         val api: FakeStoreApi = retrofit.create()
-        repository = FakeStoreProductRepository(api)
+        repository = FakeStoreProductRepository(api, FakeListingRepository())
     }
 
     @After
@@ -86,5 +86,32 @@ class FakeStoreProductRepositoryTest {
 
         assertTrue(result.isSuccess)
         assertEquals(listOf("electronics", "jewelery"), result.getOrThrow())
+    }
+
+    @Test
+    fun getAllProducts_returnsMappedProducts() = runTest {
+        server.enqueue(
+            MockResponse().setBody(
+                """
+                [
+                  {
+                    "id": 1,
+                    "title": "Phone",
+                    "price": 9.99,
+                    "description": "Desc",
+                    "category": "electronics",
+                    "image": "https://example.com/img.png",
+                    "rating": { "rate": 4.5, "count": 10 }
+                  }
+                ]
+                """.trimIndent(),
+            ),
+        )
+
+        val result = repository.getAllProducts()
+
+        assertTrue(result.isSuccess)
+        assertEquals(1, result.getOrThrow().size)
+        assertEquals("Phone", result.getOrThrow().first().title)
     }
 }
