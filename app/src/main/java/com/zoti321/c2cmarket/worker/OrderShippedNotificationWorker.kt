@@ -15,19 +15,22 @@ class OrderShippedNotificationWorker @AssistedInject constructor(
     private val notificationHelper: NotificationHelper,
 ) : CoroutineWorker(appContext, workerParams) {
 
-    override suspend fun doWork(): Result {
-        return try {
-            if (!notificationHelper.hasNotificationPermission()) {
-                return Result.success()
-            }
-            val orderId = inputData.getLong(KEY_ORDER_ID, -1L)
-            val orderNumber = inputData.getString(KEY_ORDER_NUMBER) ?: return Result.failure()
-            if (orderId <= 0) return Result.failure()
-            notificationHelper.showOrderShipped(orderId, orderNumber)
+    override suspend fun doWork(): Result = try {
+        if (!notificationHelper.hasNotificationPermission()) {
             Result.success()
-        } catch (_: Exception) {
-            Result.failure()
+        } else {
+            deliverNotification()
         }
+    } catch (_: Exception) {
+        Result.failure()
+    }
+
+    private suspend fun deliverNotification(): Result {
+        val orderId = inputData.getLong(KEY_ORDER_ID, -1L)
+        val orderNumber = inputData.getString(KEY_ORDER_NUMBER)
+        if (orderNumber.isNullOrBlank() || orderId <= 0) return Result.failure()
+        notificationHelper.showOrderShipped(orderId, orderNumber)
+        return Result.success()
     }
 
     companion object {

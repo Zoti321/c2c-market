@@ -37,7 +37,7 @@ class FakeStorePagingSource(
                 prevKey = if (page == 0) null else page - 1,
                 nextKey = nextKey,
             )
-        } catch (e: Exception) {
+        } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
             LoadResult.Error(e)
         }
     }

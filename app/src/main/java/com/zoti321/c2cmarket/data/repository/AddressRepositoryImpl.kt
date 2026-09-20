@@ -84,18 +84,14 @@ class AddressRepositoryImpl @Inject constructor(
     }
 
     private fun validate(input: AddressInput) {
-        if (input.receiverName.isBlank() || input.receiverName.length > 20) {
-            throw InvalidAddressException("收货人无效")
+        val message = when {
+            input.receiverName.isBlank() || input.receiverName.length > 20 -> "收货人无效"
+            !PHONE_REGEX.matches(input.phone) -> "手机号格式无效"
+            input.region.isBlank() || input.region.length > 50 -> "省市区无效"
+            input.detail.isBlank() || input.detail.length > 100 -> "详细地址无效"
+            else -> null
         }
-        if (!PHONE_REGEX.matches(input.phone)) {
-            throw InvalidAddressException("手机号格式无效")
-        }
-        if (input.region.isBlank() || input.region.length > 50) {
-            throw InvalidAddressException("省市区无效")
-        }
-        if (input.detail.isBlank() || input.detail.length > 100) {
-            throw InvalidAddressException("详细地址无效")
-        }
+        if (message != null) throw InvalidAddressException(message)
     }
 
     companion object {

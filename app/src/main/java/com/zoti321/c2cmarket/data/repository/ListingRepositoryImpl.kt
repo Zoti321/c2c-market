@@ -88,17 +88,13 @@ class ListingRepositoryImpl @Inject constructor(
     }
 
     private fun validate(input: ListingInput) {
-        if (input.title.isBlank() || input.title.length > 100) {
-            throw InvalidListingException("标题无效")
+        val message = when {
+            input.title.isBlank() || input.title.length > 100 -> "标题无效"
+            input.price <= 0 -> "价格必须大于 0"
+            input.description.isBlank() || input.description.length > 500 -> "描述无效"
+            input.imageUri.isBlank() -> "请选择图片"
+            else -> null
         }
-        if (input.price <= 0) {
-            throw InvalidListingException("价格必须大于 0")
-        }
-        if (input.description.isBlank() || input.description.length > 500) {
-            throw InvalidListingException("描述无效")
-        }
-        if (input.imageUri.isBlank()) {
-            throw InvalidListingException("请选择图片")
-        }
+        if (message != null) throw InvalidListingException(message)
     }
 }

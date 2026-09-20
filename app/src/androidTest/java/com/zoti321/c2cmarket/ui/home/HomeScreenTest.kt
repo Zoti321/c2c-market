@@ -10,7 +10,6 @@ import com.zoti321.c2cmarket.domain.repository.ProductRepository
 import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
-import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import org.junit.Before
@@ -28,7 +27,6 @@ class HomeScreenTest {
 
     @BindValue
     @JvmField
-    @Singleton
     val productRepository: ProductRepository = object : ProductRepository {
         private val products = listOf(
             Product(
