@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 9,
-    "identityHash": "17d47b8d85ccc43972bab5012e486b0b",
+    "identityHash": "746f4fddf34cb4019c3cae64fb110b3d",
     "entities": [
       {
         "tableName": "cart_items",
@@ -255,7 +255,7 @@
       },
       {
         "tableName": "listings",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `catalogId` INTEGER NOT NULL, `title` TEXT NOT NULL, `price` REAL NOT NULL, `description` TEXT NOT NULL, `category` TEXT NOT NULL, `imageUri` TEXT NOT NULL, `sellerId` TEXT NOT NULL, `meetupLocation` TEXT, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `catalogId` INTEGER NOT NULL, `title` TEXT NOT NULL, `price` REAL NOT NULL, `description` TEXT NOT NULL, `category` TEXT NOT NULL, `imageUri` TEXT NOT NULL, `sellerId` TEXT NOT NULL, `meetupLocation` TEXT, `status` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -309,6 +309,12 @@
             "fieldPath": "meetupLocation",
             "columnName": "meetupLocation",
             "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
           },
           {
             "fieldPath": "createdAt",
@@ -579,7 +585,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '17d47b8d85ccc43972bab5012e486b0b')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '746f4fddf34cb4019c3cae64fb110b3d')"
     ]
   }
 }

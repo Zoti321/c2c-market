@@ -2,6 +2,7 @@ package com.zoti321.c2cmarket.data.repository
 
 import com.zoti321.c2cmarket.data.error.EmptyCartException
 import com.zoti321.c2cmarket.data.local.dao.CartDao
+import com.zoti321.c2cmarket.data.local.dao.ListingDao
 import com.zoti321.c2cmarket.data.local.dao.OrderDao
 import com.zoti321.c2cmarket.data.local.entity.OrderEntity
 import com.zoti321.c2cmarket.data.local.entity.OrderLineItemEntity
@@ -13,6 +14,7 @@ import com.zoti321.c2cmarket.domain.model.OrderSummary
 import com.zoti321.c2cmarket.domain.model.ShippingInfo
 import com.zoti321.c2cmarket.domain.model.displayOrderNumber
 import com.zoti321.c2cmarket.domain.repository.AuthRepository
+import com.zoti321.c2cmarket.domain.repository.ListingRepository
 import com.zoti321.c2cmarket.domain.repository.OrderRepository
 import com.zoti321.c2cmarket.domain.scheduler.OrderNotificationScheduler
 import com.zoti321.c2cmarket.notification.NotificationHelper
@@ -27,7 +29,9 @@ import kotlinx.coroutines.flow.flatMapLatest
 class OrderRepositoryImpl @Inject constructor(
     private val orderDao: OrderDao,
     private val cartDao: CartDao,
+    private val listingDao: ListingDao,
     private val authRepository: AuthRepository,
+    private val listingRepository: ListingRepository,
     private val notificationHelper: NotificationHelper,
     private val orderNotificationScheduler: OrderNotificationScheduler,
 ) : OrderRepository {
@@ -39,6 +43,7 @@ class OrderRepositoryImpl @Inject constructor(
         val total = cartItems.sumOf { it.unitPrice * it.quantity }
         val now = System.currentTimeMillis()
         val userId = authRepository.currentUserId().first()
+        val localCatalogIds = cartItems.map { it.productId }.filter { it < 0 }.distinct()
 
         val orderEntity = OrderEntity(
             guestId = userId,
@@ -62,6 +67,7 @@ class OrderRepositoryImpl @Inject constructor(
         }
 
         val orderId = orderDao.placeOrderWithClearCart(orderEntity, lineEntities)
+        listingRepository.markReservedForCheckout(localCatalogIds)
         val lineItems = lineEntities.map { it.copy(orderId = orderId) }
         val order = orderEntity.copy(id = orderId).toDomain(lineItems)
 
@@ -87,6 +93,21 @@ class OrderRepositoryImpl @Inject constructor(
             }
         }
 
+    override fun observeOrdersAsSeller(): Flow<List<OrderSummary>> =
+        authRepository.currentUserId().flatMapLatest { sellerId ->
+            combine(
+                orderDao.observeOrdersAsSeller(sellerId),
+                orderDao.observeAllLineItems(),
+            ) { orders, allLineItems ->
+                orders.map { order ->
+                    val itemCount = allLineItems
+                        .filter { it.orderId == order.id }
+                        .sumOf { it.quantity }
+                    order.toSummary(itemCount)
+                }
+            }
+        }
+
     override fun observeOrder(orderId: Long): Flow<Order?> =
         authRepository.currentUserId().flatMapLatest { userId ->
             combine(
@@ -95,9 +116,22 @@ class OrderRepositoryImpl @Inject constructor(
             ) { order, lineItems ->
                 when {
                     order == null -> null
-                    order.guestId != userId -> null
-                    else -> order.toDomain(lineItems)
+                    order.guestId == userId -> order.toDomain(lineItems)
+                    isSellerOrder(orderId, userId) -> order.toDomain(lineItems)
+                    else -> null
                 }
             }
         }
+
+    override suspend fun isSellerForOrder(orderId: Long): Boolean {
+        val userId = authRepository.currentUserId().first()
+        return isSellerOrder(orderId, userId)
+    }
+
+    private suspend fun isSellerOrder(orderId: Long, userId: String): Boolean {
+        val localProductIds = orderDao.getLocalLineItemProductIds(orderId)
+        return localProductIds.any { catalogId ->
+            listingDao.getByCatalogId(catalogId)?.sellerId == userId
+        }
+    }
 }

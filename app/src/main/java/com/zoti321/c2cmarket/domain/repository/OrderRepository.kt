@@ -10,5 +10,9 @@ interface OrderRepository {
 
     fun observeOrders(): Flow<List<OrderSummary>>
 
+    fun observeOrdersAsSeller(): Flow<List<OrderSummary>>
+
     fun observeOrder(orderId: Long): Flow<Order?>
+
+    suspend fun isSellerForOrder(orderId: Long): Boolean
 }

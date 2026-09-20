@@ -18,6 +18,7 @@ data class ListingEntity(
     val imageUri: String,
     val sellerId: String = "guest",
     val meetupLocation: String? = null,
+    val status: String = "AVAILABLE",
     val createdAt: Long,
     val updatedAt: Long,
 )

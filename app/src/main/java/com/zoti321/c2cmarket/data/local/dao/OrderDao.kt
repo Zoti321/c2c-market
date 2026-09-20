@@ -47,4 +47,21 @@ interface OrderDao {
 
     @Query("SELECT * FROM order_line_items")
     fun observeAllLineItems(): Flow<List<OrderLineItemEntity>>
+
+    @Query("SELECT productId FROM order_line_items WHERE orderId = :orderId AND productId < 0")
+    suspend fun getLocalLineItemProductIds(orderId: Long): List<Int>
+
+    @Query(
+        """
+        SELECT DISTINCT o.* FROM orders o
+        INNER JOIN order_line_items li ON li.orderId = o.id
+        INNER JOIN listings l ON l.catalogId = li.productId AND li.productId < 0
+        WHERE l.sellerId = :sellerId
+        ORDER BY o.createdAt DESC
+        """,
+    )
+    fun observeOrdersAsSeller(sellerId: String): Flow<List<OrderEntity>>
+
+    @Query("UPDATE orders SET status = :status WHERE id = :orderId")
+    suspend fun updateStatus(orderId: Long, status: String)
 }

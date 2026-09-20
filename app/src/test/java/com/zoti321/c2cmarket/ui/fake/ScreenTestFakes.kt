@@ -64,7 +64,11 @@ private class EmptyOrderRepository : OrderRepository {
 
     override fun observeOrders(): Flow<List<OrderSummary>> = flowOf(emptyList())
 
+    override fun observeOrdersAsSeller(): Flow<List<OrderSummary>> = flowOf(emptyList())
+
     override fun observeOrder(orderId: Long): Flow<Order?> = flowOf(null)
+
+    override suspend fun isSellerForOrder(orderId: Long): Boolean = false
 }
 
 private class EmptyBrowseHistoryRepository : BrowseHistoryRepository {

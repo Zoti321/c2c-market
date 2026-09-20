@@ -112,6 +112,15 @@ private class FixedListingRepository(
 
     override suspend fun delete(catalogId: Int) = error("unused")
 
+    override suspend fun updateStatus(catalogId: Int, status: com.zoti321.c2cmarket.domain.model.ListingStatus) =
+        Result.success(Unit)
+
+    override suspend fun markReservedForCheckout(catalogIds: List<Int>) = Unit
+
+    override suspend fun markSoldForOrder(orderId: Long) = Unit
+
+    override suspend fun markAvailableForOrder(orderId: Long) = Unit
+
     override suspend fun searchLocal(query: String) = emptyList<Product>()
 }
 
