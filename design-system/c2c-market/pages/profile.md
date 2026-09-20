@@ -7,7 +7,8 @@
 ## Layout（自上而下）
 
 1. 游客 Banner（`surfaceVariant` Card）
-2. **v2.1** 最近浏览 LazyRow（有数据时）
+2. **v3.1** ListItem「我的消息」→ 会话列表（`Icons.Outlined.Chat` leading）
+3. **v2.1** 最近浏览 LazyRow（有数据时）
 3. **v2.2** `FilledTonalButton`「发布挂牌」全宽，horizontal padding 16dp
 4. **v2.2** 「我的挂牌」列表（有数据时；ListItem + 删除）
 5. **v2.3** ListItem「收货地址」→ 地址列表

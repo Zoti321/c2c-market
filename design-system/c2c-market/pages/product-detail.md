@@ -17,7 +17,15 @@
 4. 分类 Chip + rating 行 — `bodySmall`，muted `#475569`（**v2.2 挂牌**：显示「本地挂牌」Chip，**隐藏** rating）
 5. 描述 — `bodyMedium`，段落间距 8dp
 
-## Actions (bottomBar)
+## Actions
+
+### v3.1 联系卖家（描述区下方）
+
+- `OutlinedButton` 全宽「联系卖家」；horizontal padding 与正文一致
+- **隐藏条件**：`ProductSource.LOCAL_LISTING` 且为当前设备**我的挂牌**（v3.1 单游客同机）
+- 点击 → getOrCreate 会话 → push `ChatScreen`
+
+### bottomBar
 
 | 按钮 | 样式 | 色 |
 |------|------|-----|
