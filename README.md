@@ -1,6 +1,6 @@
 # C2C Market（原生 Android 学习项目）
 
-> **路线图**：[C2C Market v2 — 路线图 (#19)](https://github.com/Zoti321/c2c-market/issues/19) · MVP 已交付 ([#1](https://github.com/Zoti321/c2c-market/issues/1) · [#11](https://github.com/Zoti321/c2c-market/issues/11))
+> **路线图**：[C2C Market v3 — 路线图 (#29)](https://github.com/Zoti321/c2c-market/issues/29) · v2 已交付 ([#19](https://github.com/Zoti321/c2c-market/issues/19) · PR #27)
 
 通过开发一个买家闭环的 C2C 市场应用，系统学习原生 Android 开发。项目基于 **Kotlin + Jetpack Compose + Material 3 + Hilt**，逐步引入网络请求、Paging、Room 本地存储与 MVVM 架构分层。
 
@@ -38,9 +38,7 @@
 
 规格见 [锁定 MVP 功能边界与验收标准](https://github.com/Zoti321/c2c-market/issues/5)（Issue comment 全文）。
 
-### v2（当前阶段）
-
-**路线图**（[#19](https://github.com/Zoti321/c2c-market/issues/19)）跟踪**决策、规格与验收**；代码在规格锁定后用 `/implement` 执行（路线图不挂实现票）。
+### v2（已交付）
 
 - [x] v2.1 搜索 + 浏览历史（[约定 v2.1 搜索与浏览历史规格](https://github.com/Zoti321/c2c-market/issues/21)）
 - [x] v2.2 发布挂牌（[约定 v2.2 发布挂牌规格](https://github.com/Zoti321/c2c-market/issues/22)）
@@ -49,11 +47,15 @@
 - [x] v2.5 测试（[约定 v2.5 测试范围与策略规格](https://github.com/Zoti321/c2c-market/issues/25)）
 - [x] v2.6 Release + R8（[约定 v2.6 Release、R8 与 CI 规格](https://github.com/Zoti321/c2c-market/issues/26)）
 
-### v3（可选）
+### v3（当前阶段）
 
-- 私信/聊天（Room 本地优先，Firebase 可选）
-- Google Sign-In
-- 地图 / Deep Link
+**路线图**（[#29](https://github.com/Zoti321/c2c-market/issues/29)）跟踪**决策、规格与验收**；各切片经 `/grill-with-docs` + `/to-spec` 锁定规格后，在 `feature/v3` 上 `/implement`。
+
+- [ ] v3.1 私信 / 聊天（[约定 v3.1 私信与聊天规格](https://github.com/Zoti321/c2c-market/issues/30)）
+- [ ] v3.2 Google Sign-In（[约定 v3.2 Google Sign-In 与账号规格](https://github.com/Zoti321/c2c-market/issues/31)）
+- [ ] v3.3 Deep Link / 地图（[约定 v3.3 Deep Link 与地图规格](https://github.com/Zoti321/c2c-market/issues/32)）
+- [ ] v3.4 测试（[约定 v3.4 测试范围与策略规格](https://github.com/Zoti321/c2c-market/issues/33)）
+- [ ] v3.5 Release + R8（[约定 v3.5 Release、R8 与 CI 规格](https://github.com/Zoti321/c2c-market/issues/34)）
 
 领域术语见 [`CONTEXT.md`](CONTEXT.md)；架构决策见 [`docs/adr/`](docs/adr/)。
 
@@ -117,7 +119,7 @@ Base URL: `https://fakestoreapi.com/`
 
 采用 **Feature Branch → PR → CI Green → Merge to main** 工作流：在功能分支开发，经 Pull Request 合入 `main`，CI 全部通过后方可合并。
 
-**当前 v2 开发分支**：`feature/v2`（文档与代码均提交到此分支，v2 全部完成后再开 PR 合入 `main`）。详见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
+**当前 v3 开发分支**：`feature/v3`（文档与代码均提交到此分支，v3 全部完成后再开 PR 合入 `main`）。详见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
 
 ## 快速开始
 

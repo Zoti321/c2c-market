@@ -77,39 +77,39 @@ git pull origin main
 git branch -d feature/简短描述
 ```
 
-## 当前 v2 开发分支
+## 当前 v3 开发分支
 
-v2 阶段的所有变更——**文档、规格落地与 `/implement` 代码**——统一提交到：
+v3 阶段的所有变更——**文档、规格落地与 `/implement` 代码**——统一提交到：
 
 ```
-feature/v2
+feature/v3
 ```
 
 | 变更类型 | 示例 | 提交到 |
 |---------|------|--------|
-| 路线图 / 工作流文档 | `CONTRIBUTING.md`、README 路线图链接 | `feature/v2` |
-| 规格产出 | research 文档、设计原型、ADR 补充 | `feature/v2` |
-| v2 功能代码 | 搜索、挂牌、地址、WorkManager 等 | `feature/v2` |
+| 路线图 / 工作流文档 | `CONTRIBUTING.md`、README 路线图链接 | `feature/v3` |
+| 规格产出 | ADR 补充、设计原型 | `feature/v3` |
+| v3 功能代码 | 聊天、Sign-In、Deep Link 等 | `feature/v3` |
 
 ```bash
-git checkout feature/v2
-git pull origin feature/v2
+git checkout feature/v3
+git pull origin feature/v3
 # 开发、commit…
-git push origin feature/v2
+git push origin feature/v3
 ```
 
-v2 全部完成并通过各切片验收后，将 `feature/v2` 以 **一个 PR** 合入 `main`。
+v3 全部完成并通过各切片验收后，将 `feature/v3` 以 **一个 PR** 合入 `main`。
 
-> 不要在 `main` 上直接开发 v2；`main` 保持 MVP 可发布基线。
+> 不要在 `main` 上直接开发 v3；`main` 保持 v2 可发布基线（`2.0.0`）。
 
 ## 与路线图的关系
 
-MVP 已合入 `main`（[#1](https://github.com/Zoti321/c2c-market/issues/1) 关闭、[#11](https://github.com/Zoti321/c2c-market/issues/11) 验收通过）。当前 [v2 路线图 (#19)](https://github.com/Zoti321/c2c-market/issues/19) 跟踪**决策、规格与验收**，不跟踪实现票：
+v2 已合入 `main`（[#19](https://github.com/Zoti321/c2c-market/issues/19) 关闭、PR #27）。当前 [v3 路线图 (#29)](https://github.com/Zoti321/c2c-market/issues/29) 跟踪**决策、规格与验收**，不跟踪实现票：
 
-1. **Wayfinder 决策票** — 锁定各切片规格（全文在 **GitHub Issue comment**，见 [`issue-tracker.md`](docs/agents/issue-tracker.md)）
-2. **`/implement`** — 在 `feature/v2` 上按 Issue canonical spec 写代码（`gh issue view <n> --comments`）
-3. **PR + CI** — v2 全部完成后开一个 PR 合入 `main`
-4. **验收票** — 各切片代码就绪后手工验收
+1. **Wayfinder 决策票** — `/grill-with-docs` + `/to-spec` 锁定各切片规格（canonical 全文在 **GitHub Issue comment**，见 [`issue-tracker.md`](docs/agents/issue-tracker.md)）
+2. **`/implement`** — 在 `feature/v3` 上按 Issue canonical spec 写代码（`gh issue view <n> --comments`）
+3. **PR + CI** — v3 全部完成后开一个 PR 合入 `main`（`3.0.0`）
+4. **验收** — 各切片代码就绪后手工验收
 
 ## 分支保护（目标配置）
 
