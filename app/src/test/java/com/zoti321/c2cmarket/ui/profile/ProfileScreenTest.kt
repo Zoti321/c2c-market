@@ -47,6 +47,7 @@ class ProfileScreenTest {
                 onCreateListing = {},
                 onEditListing = {},
                 onManageAddresses = {},
+                onMessagesClick = {},
                 viewModel = ScreenTestViewModels.guestProfile(),
             )
         }

@@ -6,6 +6,7 @@ import com.zoti321.c2cmarket.domain.model.ProductSource
 import com.zoti321.c2cmarket.domain.model.Rating
 import com.zoti321.c2cmarket.domain.repository.BrowseHistoryRepository
 import com.zoti321.c2cmarket.domain.repository.CartRepository
+import com.zoti321.c2cmarket.domain.repository.ChatRepository
 import com.zoti321.c2cmarket.domain.repository.FavoriteRepository
 import com.zoti321.c2cmarket.domain.repository.ListingRepository
 import com.zoti321.c2cmarket.domain.repository.ProductRepository
@@ -48,6 +49,7 @@ class ProductDetailViewModelTest {
             cartRepository = NoOpCartRepository(),
             favoriteRepository = NoOpFavoriteRepository(),
             browseHistoryRepository = browseHistory,
+            chatRepository = NoOpChatRepository(),
         )
 
         val state = viewModel.uiState.value
@@ -138,4 +140,24 @@ private class NoOpFavoriteRepository : FavoriteRepository {
     override fun isFavorite(productId: Int): Flow<Boolean> = flowOf(false)
 
     override suspend fun toggleFavorite(product: Product) = Result.success(false)
+}
+
+private class NoOpChatRepository : ChatRepository {
+    override fun observeConversations(): Flow<List<com.zoti321.c2cmarket.domain.model.Conversation>> =
+        flowOf(emptyList())
+
+    override fun observeMessages(conversationId: Long): Flow<List<com.zoti321.c2cmarket.domain.model.Message>> =
+        flowOf(emptyList())
+
+    override suspend fun getOrCreateConversation(product: Product): Result<com.zoti321.c2cmarket.domain.model.Conversation> =
+        Result.failure(IllegalStateException("unused"))
+
+    override suspend fun saveDraft(conversationId: Long, body: String) = Unit
+
+    override suspend fun sendMessage(conversationId: Long, body: String): Result<com.zoti321.c2cmarket.domain.model.Message> =
+        Result.failure(IllegalStateException("unused"))
+
+    override suspend fun markConversationRead(conversationId: Long) = Unit
+
+    override fun observeDraft(conversationId: Long): Flow<String> = flowOf("")
 }

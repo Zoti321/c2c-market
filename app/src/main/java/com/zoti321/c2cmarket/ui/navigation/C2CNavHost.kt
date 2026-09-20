@@ -18,6 +18,8 @@ import com.zoti321.c2cmarket.ui.address.AddressListScreen
 import com.zoti321.c2cmarket.ui.cart.CartScreen
 import com.zoti321.c2cmarket.ui.category.CategoryListScreen
 import com.zoti321.c2cmarket.ui.category.CategoryProductsScreen
+import com.zoti321.c2cmarket.ui.chat.ChatScreen
+import com.zoti321.c2cmarket.ui.chat.ConversationListScreen
 import com.zoti321.c2cmarket.ui.checkout.CheckoutScreen
 import com.zoti321.c2cmarket.ui.home.HomeScreen
 import com.zoti321.c2cmarket.ui.listing.CreateListingScreen
@@ -126,6 +128,27 @@ fun C2CApp(pendingOrderId: Long? = null) {
                         navController.navigate(Routes.editListing(catalogId))
                     },
                     onManageAddresses = { navController.navigate(Routes.ADDRESS_LIST) },
+                    onMessagesClick = { navController.navigate(Routes.CONVERSATIONS) },
+                )
+            }
+
+            composable(Routes.CONVERSATIONS) {
+                ConversationListScreen(
+                    onBack = { navController.popBackStack() },
+                    onConversationClick = { conversationId ->
+                        navController.navigate(Routes.chat(conversationId))
+                    },
+                )
+            }
+
+            composable(
+                route = Routes.CHAT,
+                arguments = listOf(
+                    navArgument(Routes.CONVERSATION_ID_ARG) { type = NavType.LongType },
+                ),
+            ) {
+                ChatScreen(
+                    onBack = { navController.popBackStack() },
                 )
             }
 
@@ -139,6 +162,9 @@ fun C2CApp(pendingOrderId: Long? = null) {
                     onBack = { navController.popBackStack() },
                     onEditListing = { catalogId ->
                         navController.navigate(Routes.editListing(catalogId))
+                    },
+                    onContactSeller = { conversationId ->
+                        navController.navigate(Routes.chat(conversationId))
                     },
                 )
             }

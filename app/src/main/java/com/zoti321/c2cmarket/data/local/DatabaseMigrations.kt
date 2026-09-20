@@ -61,6 +61,51 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
     }
 }
 
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS conversations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                productId INTEGER NOT NULL,
+                productTitle TEXT NOT NULL,
+                productImageUrl TEXT NOT NULL,
+                sellerId TEXT NOT NULL,
+                sellerDisplayName TEXT NOT NULL,
+                buyerId TEXT NOT NULL,
+                lastMessagePreview TEXT NOT NULL,
+                lastMessageAt INTEGER NOT NULL,
+                unreadCount INTEGER NOT NULL,
+                createdAt INTEGER NOT NULL
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS index_conversations_buyerId_sellerId_productId
+            ON conversations(buyerId, sellerId, productId)
+            """.trimIndent(),
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                conversationId INTEGER NOT NULL,
+                senderId TEXT NOT NULL,
+                body TEXT NOT NULL,
+                status TEXT NOT NULL,
+                sentAt INTEGER,
+                isRead INTEGER NOT NULL,
+                FOREIGN KEY(conversationId) REFERENCES conversations(id) ON DELETE CASCADE
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_messages_conversationId_status ON messages(conversationId, status)",
+        )
+    }
+}
+
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL(

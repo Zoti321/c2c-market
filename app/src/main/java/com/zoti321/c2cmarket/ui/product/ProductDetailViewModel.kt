@@ -7,6 +7,7 @@ import com.zoti321.c2cmarket.domain.error.ProductNotFoundException
 import com.zoti321.c2cmarket.domain.model.ProductSource
 import com.zoti321.c2cmarket.domain.repository.BrowseHistoryRepository
 import com.zoti321.c2cmarket.domain.repository.CartRepository
+import com.zoti321.c2cmarket.domain.repository.ChatRepository
 import com.zoti321.c2cmarket.domain.repository.FavoriteRepository
 import com.zoti321.c2cmarket.domain.repository.ListingRepository
 import com.zoti321.c2cmarket.domain.repository.ProductRepository
@@ -39,6 +40,7 @@ class ProductDetailViewModel @Inject constructor(
     private val cartRepository: CartRepository,
     private val favoriteRepository: FavoriteRepository,
     private val browseHistoryRepository: BrowseHistoryRepository,
+    private val chatRepository: ChatRepository,
 ) : ViewModel() {
 
     private val productId: Int = checkNotNull(savedStateHandle[Routes.PRODUCT_ID_ARG])
@@ -123,4 +125,15 @@ class ProductDetailViewModel @Inject constructor(
     fun isLocalListing(): Boolean =
         (_uiState.value as? ProductDetailUiState.Success)?.product?.source ==
             ProductSource.LOCAL_LISTING
+
+    fun contactSeller(onSuccess: (Long) -> Unit) {
+        val product = (_uiState.value as? ProductDetailUiState.Success)?.product ?: return
+        if (product.source == ProductSource.LOCAL_LISTING) return
+        viewModelScope.launch {
+            chatRepository.getOrCreateConversation(product).fold(
+                onSuccess = { conversation -> onSuccess(conversation.id) },
+                onFailure = { _events.emit(ProductDetailEvent.ActionFailed) },
+            )
+        }
+    }
 }

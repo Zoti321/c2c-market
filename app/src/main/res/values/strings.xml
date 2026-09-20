@@ -120,4 +120,16 @@
     <string name="notification_order_shipped_title">Mock 配送提醒</string>
     <string name="notification_order_shipped_body">订单 %1$s 已模拟进入配送</string>
     <string name="permission_notifications_rationale">允许通知以接收 Mock 配送提醒</string>
+
+    <!-- Chat -->
+    <string name="contact_seller">联系卖家</string>
+    <string name="profile_messages">我的消息</string>
+    <string name="chat_title">聊天</string>
+    <string name="chat_conversations_title">我的消息</string>
+    <string name="chat_conversations_empty">暂无消息</string>
+    <string name="chat_conversations_empty_hint">在商品详情点击「联系卖家」开始对话</string>
+    <string name="chat_input_hint">输入消息…</string>
+    <string name="chat_send">发送</string>
+    <string name="chat_send_failed">发送失败，请重试</string>
+    <string name="chat_mock_reply_default">你好，这件商品还在的，有需要可以随时聊。</string>
 </resources>

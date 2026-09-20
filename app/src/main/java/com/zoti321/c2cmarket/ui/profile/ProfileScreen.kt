@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.LocationOn
@@ -64,6 +65,7 @@ fun ProfileScreen(
     onCreateListing: () -> Unit,
     onEditListing: (Int) -> Unit,
     onManageAddresses: () -> Unit,
+    onMessagesClick: () -> Unit,
     modifier: Modifier = Modifier.testTag("profile_screen"),
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
@@ -92,6 +94,19 @@ fun ProfileScreen(
                         .padding(innerPadding),
                 ) {
                     item { GuestBanner() }
+                    item {
+                        ListItem(
+                            modifier = Modifier.clickable(onClick = onMessagesClick),
+                            headlineContent = { Text(stringResource(R.string.profile_messages)) },
+                            leadingContent = {
+                                Icon(Icons.Outlined.Chat, contentDescription = null)
+                            },
+                            trailingContent = {
+                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+                            },
+                        )
+                        HorizontalDivider()
+                    }
                     item {
                         FilledTonalButton(
                             onClick = onCreateListing,
