@@ -19,11 +19,21 @@
 
 ## Actions
 
+### v3.3 分享
+
+- `TopAppBar` actions：`Icons.Outlined.Share`
+- 分享文案：`{title}\n{c2cmarket://product/{id}}`（系统 Share sheet）
+
 ### v3.1 联系卖家（描述区下方）
 
 - `OutlinedButton` 全宽「联系卖家」；horizontal padding 与正文一致
 - **隐藏条件**：`ProductSource.LOCAL_LISTING` 且为当前设备**我的挂牌**（v3.1 单游客同机）
 - 点击 → getOrCreate 会话 → push `ChatScreen`
+
+### v3.3 面交地点（本地挂牌）
+
+- 描述下方可选展示「面交地点：{meetupLocation}」
+- 非空时显示 `TextButton`「在地图中查看」→ `geo:` Intent
 
 ### bottomBar
 
