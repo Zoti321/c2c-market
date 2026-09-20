@@ -27,8 +27,6 @@ android {
         targetSdk = 37
         versionCode = 2
         versionName = "2.0.0"
-
-        testInstrumentationRunner = "com.zoti321.c2cmarket.HiltTestRunner"
     }
 
     signingConfigs {
@@ -47,7 +45,6 @@ android {
     buildTypes {
         debug {
             enableUnitTestCoverage = true
-            enableAndroidTestCoverage = true
         }
         release {
             isMinifyEnabled = true
@@ -205,12 +202,8 @@ dependencies {
     testImplementation(libs.androidx.work.testing)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.robolectric)
-    androidTestImplementation(libs.hilt.android.testing)
-    kspAndroidTest(libs.hilt.compiler)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.junit)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
