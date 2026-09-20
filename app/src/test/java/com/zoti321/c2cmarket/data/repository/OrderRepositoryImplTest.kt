@@ -218,6 +218,123 @@ class OrderRepositoryImplTest {
         assertEquals(1, sellerOrders.size)
         assertEquals(orderId, sellerOrders.first().id)
     }
+
+    @Test
+    fun confirmOrderAsSeller_movesPendingToConfirmed() = runTest {
+        val sellerId = "google:seller-1"
+        database.listingDao().insert(
+            ListingEntity(
+                catalogId = -1,
+                title = "Local",
+                price = 10.0,
+                description = "d",
+                category = "electronics",
+                imageUri = "uri",
+                sellerId = sellerId,
+                status = ListingStatus.RESERVED.name,
+                createdAt = 1L,
+                updatedAt = 1L,
+            ),
+        )
+        val orderId = database.orderDao().insertOrder(
+            OrderEntity(
+                guestId = "guest",
+                totalAmount = 10.0,
+                status = OrderStatus.PENDING.name,
+                createdAt = 1L,
+                meetupLocation = "公园",
+            ),
+        )
+        database.orderDao().insertLineItems(
+            listOf(
+                OrderLineItemEntity(
+                    orderId = orderId,
+                    productId = -1,
+                    title = "Local",
+                    unitPrice = 10.0,
+                    quantity = 1,
+                    imageUrl = "uri",
+                ),
+            ),
+        )
+        val repo = OrderRepositoryImpl(
+            orderDao = database.orderDao(),
+            cartDao = cartDao,
+            listingDao = database.listingDao(),
+            authRepository = FakeAuthRepository(initialUserId = sellerId),
+            listingRepository = listingRepository,
+            notificationHelper = NotificationHelper(ApplicationProvider.getApplicationContext()),
+            orderNotificationScheduler = scheduler,
+        )
+
+        repo.confirmOrderAsSeller(orderId).getOrThrow()
+
+        val updated = database.orderDao().getById(orderId)
+        assertEquals(OrderStatus.CONFIRMED.name, updated?.status)
+    }
+
+    @Test
+    fun dualMeetupConfirm_completesOrderAndMarksListingSold() = runTest {
+        val sellerId = "google:seller-1"
+        database.listingDao().insert(
+            ListingEntity(
+                catalogId = -1,
+                title = "Local",
+                price = 10.0,
+                description = "d",
+                category = "electronics",
+                imageUri = "uri",
+                sellerId = sellerId,
+                status = ListingStatus.RESERVED.name,
+                createdAt = 1L,
+                updatedAt = 1L,
+            ),
+        )
+        val orderId = database.orderDao().insertOrder(
+            OrderEntity(
+                guestId = "guest",
+                totalAmount = 10.0,
+                status = OrderStatus.CONFIRMED.name,
+                createdAt = 1L,
+            ),
+        )
+        database.orderDao().insertLineItems(
+            listOf(
+                OrderLineItemEntity(
+                    orderId = orderId,
+                    productId = -1,
+                    title = "Local",
+                    unitPrice = 10.0,
+                    quantity = 1,
+                    imageUrl = "uri",
+                ),
+            ),
+        )
+        val buyerRepo = OrderRepositoryImpl(
+            orderDao = database.orderDao(),
+            cartDao = cartDao,
+            listingDao = database.listingDao(),
+            authRepository = FakeAuthRepository(),
+            listingRepository = listingRepository,
+            notificationHelper = NotificationHelper(ApplicationProvider.getApplicationContext()),
+            orderNotificationScheduler = scheduler,
+        )
+        val sellerRepo = OrderRepositoryImpl(
+            orderDao = database.orderDao(),
+            cartDao = cartDao,
+            listingDao = database.listingDao(),
+            authRepository = FakeAuthRepository(initialUserId = sellerId),
+            listingRepository = listingRepository,
+            notificationHelper = NotificationHelper(ApplicationProvider.getApplicationContext()),
+            orderNotificationScheduler = scheduler,
+        )
+
+        buyerRepo.confirmMeetupAsBuyer(orderId).getOrThrow()
+        sellerRepo.confirmMeetupAsSeller(orderId).getOrThrow()
+
+        assertEquals(OrderStatus.COMPLETED.name, database.orderDao().getById(orderId)?.status)
+        assertEquals(ListingStatus.SOLD.name, database.listingDao().getByCatalogId(-1)?.status)
+    }
 }
 
 private class FakeCartDaoForOrder(
