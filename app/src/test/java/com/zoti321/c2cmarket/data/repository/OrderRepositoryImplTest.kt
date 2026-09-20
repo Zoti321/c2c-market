@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -52,6 +53,7 @@ class OrderRepositoryImplTest {
         cartDao = FakeCartDaoForOrder(
             mutableListOf(
                 CartItemEntity(
+                    userId = "guest",
                     productId = 1,
                     title = "Phone",
                     unitPrice = 10.0,
@@ -102,7 +104,7 @@ class OrderRepositoryImplTest {
 
     @Test
     fun placeOrder_emptyCart_fails() = runTest {
-        cartDao.clearAll()
+        cartDao.clearForUser("guest")
 
         val result = repository.placeOrder(shipping)
 
@@ -130,6 +132,7 @@ class OrderRepositoryImplTest {
         cartDao = FakeCartDaoForOrder(
             mutableListOf(
                 CartItemEntity(
+                    userId = "guest",
                     productId = -1,
                     title = "Local Item",
                     unitPrice = 50.0,
@@ -222,31 +225,39 @@ private class FakeCartDaoForOrder(
 ) : CartDao {
     private val state = MutableStateFlow(items.toList())
 
-    override fun observeAll(): Flow<List<CartItemEntity>> = state.asStateFlow()
+    override fun observeAll(userId: String): Flow<List<CartItemEntity>> =
+        state.map { list -> list.filter { it.userId == userId } }
 
-    override suspend fun getByProductId(id: Int): CartItemEntity? =
-        items.firstOrNull { it.productId == id }
+    override suspend fun getByProductId(userId: String, id: Int): CartItemEntity? =
+        items.firstOrNull { it.userId == userId && it.productId == id }
 
     override suspend fun insert(item: CartItemEntity) {
-        items.removeAll { it.productId == item.productId }
+        items.removeAll { it.userId == item.userId && it.productId == item.productId }
         items.add(item)
         state.value = items.toList()
     }
 
-    override suspend fun updateQuantity(id: Int, qty: Int) = Unit
+    override suspend fun updateQuantity(userId: String, id: Int, qty: Int) = Unit
 
-    override suspend fun updateItem(id: Int, title: String, price: Double, imageUrl: String, qty: Int) =
+    override suspend fun updateItem(userId: String, id: Int, title: String, price: Double, imageUrl: String, qty: Int) =
         Unit
 
-    override suspend fun deleteByProductId(id: Int) {
+    override suspend fun deleteByProductId(userId: String, id: Int) {
+        items.removeAll { it.userId == userId && it.productId == id }
+        state.value = items.toList()
+    }
+
+    override suspend fun deleteByProductIdAllUsers(id: Int) {
         items.removeAll { it.productId == id }
         state.value = items.toList()
     }
 
-    override suspend fun clearAll() {
-        items.clear()
-        state.value = emptyList()
+    override suspend fun clearForUser(userId: String) {
+        items.removeAll { it.userId == userId }
+        state.value = items.toList()
     }
+
+    override suspend fun migrateGuestCart(newUserId: String) = Unit
 }
 
 private class FakeOrderDaoForOrder(
@@ -261,17 +272,18 @@ private class FakeOrderDaoForOrder(
         placedLineItems = items
     }
 
-    override suspend fun clearCart() {
-        cartDao.clearAll()
+    override suspend fun clearCart(userId: String) {
+        cartDao.clearForUser(userId)
     }
 
     override suspend fun placeOrderWithClearCart(
         order: OrderEntity,
         lineItems: List<OrderLineItemEntity>,
+        cartUserId: String,
     ): Long {
         val orderId = insertOrder(order)
         insertLineItems(lineItems.map { it.copy(orderId = orderId) })
-        clearCart()
+        clearCart(cartUserId)
         return orderId
     }
 

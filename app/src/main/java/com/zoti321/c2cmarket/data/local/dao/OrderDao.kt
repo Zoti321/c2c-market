@@ -16,17 +16,18 @@ interface OrderDao {
     @Insert
     suspend fun insertLineItems(items: List<OrderLineItemEntity>)
 
-    @Query("DELETE FROM cart_items")
-    suspend fun clearCart()
+    @Query("DELETE FROM cart_items WHERE userId = :userId")
+    suspend fun clearCart(userId: String)
 
     @Transaction
     suspend fun placeOrderWithClearCart(
         order: OrderEntity,
         lineItems: List<OrderLineItemEntity>,
+        cartUserId: String,
     ): Long {
         val orderId = insertOrder(order)
         insertLineItems(lineItems.map { it.copy(orderId = orderId) })
-        clearCart()
+        clearCart(cartUserId)
         return orderId
     }
 

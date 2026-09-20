@@ -39,12 +39,12 @@ class OrderRepositoryImpl @Inject constructor(
 ) : OrderRepository {
 
     override suspend fun placeOrder(shipping: ShippingInfo): Result<Order> = runCatching {
-        val cartItems = cartDao.observeAll().first()
+        val userId = authRepository.currentUserId().first()
+        val cartItems = cartDao.observeAll(userId).first()
         if (cartItems.isEmpty()) throw EmptyCartException()
 
         val total = cartItems.sumOf { it.unitPrice * it.quantity }
         val now = System.currentTimeMillis()
-        val userId = authRepository.currentUserId().first()
         val localCatalogIds = cartItems.map { it.productId }.filter { it < 0 }.distinct()
         val isMeetupOrder = localCatalogIds.isNotEmpty()
         val meetupLocation = if (isMeetupOrder) {
@@ -77,7 +77,7 @@ class OrderRepositoryImpl @Inject constructor(
             )
         }
 
-        val orderId = orderDao.placeOrderWithClearCart(orderEntity, lineEntities)
+        val orderId = orderDao.placeOrderWithClearCart(orderEntity, lineEntities, userId)
         listingRepository.markReservedForCheckout(localCatalogIds)
         val lineItems = lineEntities.map { it.copy(orderId = orderId) }
         val order = orderEntity.copy(id = orderId).toDomain(lineItems)

@@ -1,11 +1,14 @@
 package com.zoti321.c2cmarket.data.local.entity
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
 
-@Entity(tableName = "cart_items")
+@Entity(
+    tableName = "cart_items",
+    primaryKeys = ["userId", "productId"],
+)
 data class CartItemEntity(
-    @PrimaryKey val productId: Int,
+    val userId: String,
+    val productId: Int,
     val title: String,
     val unitPrice: Double,
     val imageUrl: String,

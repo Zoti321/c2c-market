@@ -29,6 +29,7 @@ import com.zoti321.c2cmarket.ui.category.CategoryProductsScreen
 import com.zoti321.c2cmarket.ui.chat.ChatScreen
 import com.zoti321.c2cmarket.ui.chat.ConversationListScreen
 import com.zoti321.c2cmarket.ui.checkout.CheckoutScreen
+import com.zoti321.c2cmarket.ui.favorites.FavoriteListScreen
 import com.zoti321.c2cmarket.ui.home.HomeScreen
 import com.zoti321.c2cmarket.ui.listing.CreateListingScreen
 import com.zoti321.c2cmarket.ui.order.OrderDetailScreen
@@ -144,7 +145,15 @@ fun C2CApp(deepLinkIntent: Intent? = null) {
                         onManageAddresses = { navController.navigate(Routes.ADDRESS_LIST) },
                         onBuyerMessagesClick = { navController.navigate(Routes.conversationsBuyer()) },
                         onSellerMessagesClick = { navController.navigate(Routes.conversationsSeller()) },
+                        onFavoritesClick = { navController.navigate(Routes.FAVORITES) },
                     ),
+                )
+            }
+
+            composable(Routes.FAVORITES) {
+                FavoriteListScreen(
+                    onBack = { navController.popBackStack() },
+                    onProductClick = { id -> navController.navigate(Routes.product(id)) },
                 )
             }
 

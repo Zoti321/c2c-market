@@ -54,6 +54,7 @@ class ListingRepositoryImplTest {
         val listing = repository.create(validInput("Delete Me")).getOrThrow()
         database.cartDao().insert(
             com.zoti321.c2cmarket.data.local.entity.CartItemEntity(
+                userId = "guest",
                 productId = listing.id,
                 title = listing.title,
                 unitPrice = listing.price,
@@ -62,13 +63,13 @@ class ListingRepositoryImplTest {
                 addedAt = 1L,
             ),
         )
-        database.favoriteDao().insert(FavoriteEntity(listing.id, 1L))
+        database.favoriteDao().insert(FavoriteEntity("guest", listing.id, 1L))
 
         repository.delete(listing.id)
 
         assertTrue(database.listingDao().getByCatalogId(listing.id) == null)
-        assertTrue(database.cartDao().getByProductId(listing.id) == null)
-        assertFalse(database.favoriteDao().isFavorite(listing.id))
+        assertTrue(database.cartDao().getByProductId("guest", listing.id) == null)
+        assertFalse(database.favoriteDao().isFavorite("guest", listing.id))
     }
 
     @Test

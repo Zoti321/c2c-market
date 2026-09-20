@@ -31,6 +31,8 @@ class GuestDataMigratorTest {
             orderDao = database.orderDao(),
             listingDao = database.listingDao(),
             conversationDao = database.conversationDao(),
+            cartDao = database.cartDao(),
+            favoriteDao = database.favoriteDao(),
         )
     }
 

@@ -156,6 +156,10 @@
 
     <!-- Chat -->
     <string name="contact_seller">联系卖家</string>
+    <string name="profile_favorites">我的收藏</string>
+    <string name="favorites_title">我的收藏</string>
+    <string name="favorites_empty">暂无收藏</string>
+    <string name="favorites_empty_hint">在商品详情点击收藏按钮添加</string>
     <string name="profile_seller_orders_section">卖出订单</string>
     <string name="profile_messages">我的消息</string>
     <string name="profile_seller_messages">收到的消息</string>

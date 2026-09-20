@@ -6,5 +6,9 @@ import kotlinx.coroutines.flow.Flow
 interface FavoriteRepository {
     fun isFavorite(productId: Int): Flow<Boolean>
 
+    fun observeFavorites(): Flow<List<Product>>
+
     suspend fun toggleFavorite(product: Product): Result<Boolean>
+
+    suspend fun removeFavorite(productId: Int): Result<Unit>
 }

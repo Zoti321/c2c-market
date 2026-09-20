@@ -20,6 +20,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.PersonOutline
 import androidx.compose.material.icons.outlined.ReceiptLong
@@ -128,6 +129,19 @@ fun ProfileScreen(
                             },
                             onSignOut = viewModel::signOut,
                         )
+                    }
+                    item {
+                        ListItem(
+                            modifier = Modifier.clickable(onClick = callbacks.onFavoritesClick),
+                            headlineContent = { Text(stringResource(R.string.profile_favorites)) },
+                            leadingContent = {
+                                Icon(Icons.Outlined.FavoriteBorder, contentDescription = null)
+                            },
+                            trailingContent = {
+                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+                            },
+                        )
+                        HorizontalDivider()
                     }
                     item {
                         ListItem(

@@ -9,6 +9,7 @@ object Routes {
     const val PROFILE = "profile"
 
     const val SEARCH = "search"
+    const val FAVORITES = "favorites"
 
     const val PRODUCT = "product/{id}"
     const val PRODUCT_ID_ARG = "id"

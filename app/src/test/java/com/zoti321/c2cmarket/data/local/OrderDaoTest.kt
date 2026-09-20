@@ -38,6 +38,7 @@ class OrderDaoTest {
         val cartDao = database.cartDao()
         cartDao.insert(
             CartItemEntity(
+                userId = GuestSession.GUEST_ID,
                 productId = 1,
                 title = "Phone",
                 unitPrice = 12.0,
@@ -67,10 +68,10 @@ class OrderDaoTest {
             ),
         )
 
-        val orderId = orderDao.placeOrderWithClearCart(order, lines)
+        val orderId = orderDao.placeOrderWithClearCart(order, lines, GuestSession.GUEST_ID)
 
         assertTrue(orderId > 0)
-        assertTrue(cartDao.observeAll().first().isEmpty())
+        assertTrue(cartDao.observeAll(GuestSession.GUEST_ID).first().isEmpty())
         val savedLines = orderDao.observeLineItems(orderId).first()
         assertEquals(1, savedLines.size)
         assertEquals(orderId, savedLines.first().orderId)

@@ -154,7 +154,11 @@ private class NoOpCartRepository : CartRepository {
 private class NoOpFavoriteRepository : FavoriteRepository {
     override fun isFavorite(productId: Int): Flow<Boolean> = flowOf(false)
 
+    override fun observeFavorites(): Flow<List<Product>> = flowOf(emptyList())
+
     override suspend fun toggleFavorite(product: Product) = Result.success(false)
+
+    override suspend fun removeFavorite(productId: Int) = Result.success(Unit)
 }
 
 private class NoOpChatRepository : ChatRepository {

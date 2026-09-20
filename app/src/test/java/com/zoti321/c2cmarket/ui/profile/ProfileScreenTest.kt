@@ -50,6 +50,7 @@ class ProfileScreenTest {
                     onManageAddresses = {},
                     onBuyerMessagesClick = {},
                     onSellerMessagesClick = {},
+                    onFavoritesClick = {},
                 ),
                 viewModel = ScreenTestViewModels.guestProfile(),
             )
@@ -70,6 +71,7 @@ class ProfileScreenTest {
                     onManageAddresses = {},
                     onBuyerMessagesClick = {},
                     onSellerMessagesClick = {},
+                    onFavoritesClick = {},
                 ),
                 viewModel = ScreenTestViewModels.signedInProfile(displayName = "张三"),
             )

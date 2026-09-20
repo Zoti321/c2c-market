@@ -8,4 +8,5 @@ data class ProfileScreenCallbacks(
     val onManageAddresses: () -> Unit,
     val onBuyerMessagesClick: () -> Unit,
     val onSellerMessagesClick: () -> Unit,
+    val onFavoritesClick: () -> Unit,
 )

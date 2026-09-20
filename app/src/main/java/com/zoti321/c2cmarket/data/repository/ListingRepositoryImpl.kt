@@ -90,8 +90,8 @@ class ListingRepositoryImpl @Inject constructor(
         }
         database.withTransaction {
             listingDao.deleteByCatalogId(catalogId)
-            cartDao.deleteByProductId(catalogId)
-            favoriteDao.deleteByProductId(catalogId)
+            cartDao.deleteByProductIdAllUsers(catalogId)
+            favoriteDao.deleteByProductIdAllUsers(catalogId)
         }
     }
 
