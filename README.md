@@ -52,7 +52,7 @@
 **路线图**（[#29](https://github.com/Zoti321/c2c-market/issues/29)）跟踪**决策、规格与验收**；各切片经 `/grill-with-docs` + `/to-spec` 锁定规格后，在 `feature/v3` 上 `/implement`。
 
 - [x] v3.1 私信 / 聊天（[约定 v3.1 私信与聊天规格](https://github.com/Zoti321/c2c-market/issues/30)）
-- [ ] v3.2 Google Sign-In（[约定 v3.2 Google Sign-In 与账号规格](https://github.com/Zoti321/c2c-market/issues/31)）
+- [x] v3.2 Google Sign-In（[约定 v3.2 Google Sign-In 与账号规格](https://github.com/Zoti321/c2c-market/issues/31)）
 - [ ] v3.3 Deep Link / 地图（[约定 v3.3 Deep Link 与地图规格](https://github.com/Zoti321/c2c-market/issues/32)）
 - [ ] v3.4 测试（[约定 v3.4 测试范围与策略规格](https://github.com/Zoti321/c2c-market/issues/33)）
 - [ ] v3.5 Release + R8（[约定 v3.5 Release、R8 与 CI 规格](https://github.com/Zoti321/c2c-market/issues/34)）
