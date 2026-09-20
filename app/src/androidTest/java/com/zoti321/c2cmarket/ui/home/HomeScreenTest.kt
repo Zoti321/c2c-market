@@ -1,9 +1,10 @@
 package com.zoti321.c2cmarket.ui.home
 
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
+import com.zoti321.c2cmarket.HiltTestActivity
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -15,7 +16,7 @@ class HomeScreenTest {
     val hiltRule = HiltAndroidRule(this)
 
     @get:Rule(order = 1)
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<HiltTestActivity>()
 
     @Before
     fun setUp() {
