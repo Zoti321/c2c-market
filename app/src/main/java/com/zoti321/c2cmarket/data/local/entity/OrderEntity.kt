@@ -13,4 +13,7 @@ data class OrderEntity(
     val shippingReceiverName: String? = null,
     val shippingPhone: String? = null,
     val shippingAddress: String? = null,
+    val meetupLocation: String? = null,
+    val buyerMeetupConfirmed: Boolean = false,
+    val sellerMeetupConfirmed: Boolean = false,
 )

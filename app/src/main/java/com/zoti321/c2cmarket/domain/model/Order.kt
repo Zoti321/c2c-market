@@ -18,7 +18,12 @@ data class Order(
     val status: OrderStatus,
     val createdAt: Instant,
     val shipping: ShippingInfo? = null,
+    val meetupLocation: String? = null,
+    val buyerMeetupConfirmed: Boolean = false,
+    val sellerMeetupConfirmed: Boolean = false,
 )
+
+fun Order.isMeetupOrder(): Boolean = items.any { it.productId < 0 }
 
 data class OrderSummary(
     val id: Long,

@@ -3,6 +3,7 @@ package com.zoti321.c2cmarket.data.scheduler
 import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import com.zoti321.c2cmarket.domain.scheduler.OrderNotificationKind
 import com.zoti321.c2cmarket.domain.scheduler.OrderNotificationScheduler
 import com.zoti321.c2cmarket.notification.NotificationHelper
 import com.zoti321.c2cmarket.worker.OrderShippedNotificationWorker
@@ -16,18 +17,19 @@ class WorkManagerOrderNotificationScheduler @Inject constructor(
     private val notificationHelper: NotificationHelper,
 ) : OrderNotificationScheduler {
 
-    override fun schedule(orderId: Long, orderNumber: String) {
+    override fun schedule(orderId: Long, orderNumber: String, kind: OrderNotificationKind) {
         if (!notificationHelper.hasNotificationPermission()) return
         val input = Data.Builder()
             .putLong(OrderShippedNotificationWorker.KEY_ORDER_ID, orderId)
             .putString(OrderShippedNotificationWorker.KEY_ORDER_NUMBER, orderNumber)
+            .putString(OrderShippedNotificationWorker.KEY_NOTIFICATION_KIND, kind.name)
             .build()
         val request = OneTimeWorkRequestBuilder<OrderShippedNotificationWorker>()
             .setInitialDelay(ORDER_NOTIFICATION_DELAY_SECONDS, TimeUnit.SECONDS)
             .setInputData(input)
             .build()
         workManager.enqueueUniqueWork(
-            "order_ship_notify_$orderId",
+            uniqueWorkName(orderId, kind),
             androidx.work.ExistingWorkPolicy.REPLACE,
             request,
         )
@@ -35,5 +37,8 @@ class WorkManagerOrderNotificationScheduler @Inject constructor(
 
     companion object {
         const val ORDER_NOTIFICATION_DELAY_SECONDS = 15L
+
+        fun uniqueWorkName(orderId: Long, kind: OrderNotificationKind): String =
+            "order_notify_${kind.name.lowercase()}_$orderId"
     }
 }

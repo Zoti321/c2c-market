@@ -292,13 +292,23 @@ private class FakeOrderDaoForOrder(
     override fun observeOrdersAsSeller(sellerId: String): Flow<List<OrderEntity>> = flowOf(emptyList())
 
     override suspend fun updateStatus(orderId: Long, status: String) = Unit
+
+    override suspend fun getById(id: Long): OrderEntity? = null
+
+    override suspend fun setBuyerMeetupConfirmed(orderId: Long) = Unit
+
+    override suspend fun setSellerMeetupConfirmed(orderId: Long) = Unit
 }
 
 private class RecordingOrderNotificationScheduler : OrderNotificationScheduler {
     var wasScheduled = false
         private set
 
-    override fun schedule(orderId: Long, orderNumber: String) {
+    override fun schedule(
+        orderId: Long,
+        orderNumber: String,
+        kind: com.zoti321.c2cmarket.domain.scheduler.OrderNotificationKind,
+    ) {
         wasScheduled = true
     }
 }

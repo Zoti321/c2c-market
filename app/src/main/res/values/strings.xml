@@ -139,6 +139,19 @@
     <string name="notification_channel_orders">订单通知</string>
     <string name="notification_order_shipped_title">Mock 配送提醒</string>
     <string name="notification_order_shipped_body">订单 %1$s 已模拟进入配送</string>
+    <string name="notification_order_pending_seller_title">新卖出订单</string>
+    <string name="notification_order_pending_seller_body">订单 %1$s 待你确认</string>
+    <string name="notification_order_confirmed_buyer_title">卖家已确认订单</string>
+    <string name="notification_order_confirmed_buyer_body">订单 %1$s 已确认，请安排面交</string>
+    <string name="notification_order_completed_title">面交已完成</string>
+    <string name="notification_order_completed_body">订单 %1$s 已完成</string>
+    <string name="order_meetup_title">面交地点</string>
+    <string name="order_timeline_pending">1. 待卖家确认</string>
+    <string name="order_timeline_confirmed">2. 待面交</string>
+    <string name="order_timeline_completed">3. 已完成</string>
+    <string name="order_action_confirm">确认订单</string>
+    <string name="order_action_cancel">取消订单</string>
+    <string name="order_action_confirm_meetup">确认面交完成</string>
     <string name="permission_notifications_rationale">允许通知以接收 Mock 配送提醒</string>
 
     <!-- Chat -->

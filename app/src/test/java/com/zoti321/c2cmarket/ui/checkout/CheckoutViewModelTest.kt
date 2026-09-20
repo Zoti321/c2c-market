@@ -166,4 +166,12 @@ private class FakeOrderRepository : OrderRepository {
     override fun observeOrder(orderId: Long) = flowOf(null)
 
     override suspend fun isSellerForOrder(orderId: Long): Boolean = false
+
+    override suspend fun confirmOrderAsSeller(orderId: Long): Result<Unit> = Result.success(Unit)
+
+    override suspend fun confirmMeetupAsBuyer(orderId: Long): Result<Unit> = Result.success(Unit)
+
+    override suspend fun confirmMeetupAsSeller(orderId: Long): Result<Unit> = Result.success(Unit)
+
+    override suspend fun cancelOrderAsSeller(orderId: Long): Result<Unit> = Result.success(Unit)
 }

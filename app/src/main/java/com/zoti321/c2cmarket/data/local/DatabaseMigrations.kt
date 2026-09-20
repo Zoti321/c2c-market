@@ -131,6 +131,13 @@ val MIGRATION_8_9 = object : Migration(8, 9) {
         db.execSQL(
             "ALTER TABLE listings ADD COLUMN status TEXT NOT NULL DEFAULT 'AVAILABLE'",
         )
+        db.execSQL("ALTER TABLE orders ADD COLUMN meetupLocation TEXT")
+        db.execSQL(
+            "ALTER TABLE orders ADD COLUMN buyerMeetupConfirmed INTEGER NOT NULL DEFAULT 0",
+        )
+        db.execSQL(
+            "ALTER TABLE orders ADD COLUMN sellerMeetupConfirmed INTEGER NOT NULL DEFAULT 0",
+        )
     }
 }
 

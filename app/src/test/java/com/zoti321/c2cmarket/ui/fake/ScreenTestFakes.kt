@@ -69,6 +69,14 @@ private class EmptyOrderRepository : OrderRepository {
     override fun observeOrder(orderId: Long): Flow<Order?> = flowOf(null)
 
     override suspend fun isSellerForOrder(orderId: Long): Boolean = false
+
+    override suspend fun confirmOrderAsSeller(orderId: Long): Result<Unit> = Result.success(Unit)
+
+    override suspend fun confirmMeetupAsBuyer(orderId: Long): Result<Unit> = Result.success(Unit)
+
+    override suspend fun confirmMeetupAsSeller(orderId: Long): Result<Unit> = Result.success(Unit)
+
+    override suspend fun cancelOrderAsSeller(orderId: Long): Result<Unit> = Result.success(Unit)
 }
 
 private class EmptyBrowseHistoryRepository : BrowseHistoryRepository {

@@ -42,7 +42,7 @@ class WorkManagerOrderNotificationSchedulerTest {
             ApplicationProvider.getApplicationContext(),
         )
         val workInfos = workManager
-            .getWorkInfosForUniqueWork("order_ship_notify_7")
+            .getWorkInfosForUniqueWork("order_notify_shipped_7")
             .get()
         assertEquals(1, workInfos.size)
         assertEquals(WorkInfo.State.ENQUEUED, workInfos.first().state)

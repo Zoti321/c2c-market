@@ -64,4 +64,13 @@ interface OrderDao {
 
     @Query("UPDATE orders SET status = :status WHERE id = :orderId")
     suspend fun updateStatus(orderId: Long, status: String)
+
+    @Query("SELECT * FROM orders WHERE id = :id LIMIT 1")
+    suspend fun getById(id: Long): OrderEntity?
+
+    @Query("UPDATE orders SET buyerMeetupConfirmed = 1 WHERE id = :orderId")
+    suspend fun setBuyerMeetupConfirmed(orderId: Long)
+
+    @Query("UPDATE orders SET sellerMeetupConfirmed = 1 WHERE id = :orderId")
+    suspend fun setSellerMeetupConfirmed(orderId: Long)
 }

@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 9,
-    "identityHash": "746f4fddf34cb4019c3cae64fb110b3d",
+    "identityHash": "a25da9bfd48f547666383a3264cf2146",
     "entities": [
       {
         "tableName": "cart_items",
@@ -78,7 +78,7 @@
       },
       {
         "tableName": "orders",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `guestId` TEXT NOT NULL, `totalAmount` REAL NOT NULL, `status` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `shippingReceiverName` TEXT, `shippingPhone` TEXT, `shippingAddress` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `guestId` TEXT NOT NULL, `totalAmount` REAL NOT NULL, `status` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `shippingReceiverName` TEXT, `shippingPhone` TEXT, `shippingAddress` TEXT, `meetupLocation` TEXT, `buyerMeetupConfirmed` INTEGER NOT NULL, `sellerMeetupConfirmed` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -124,6 +124,23 @@
             "fieldPath": "shippingAddress",
             "columnName": "shippingAddress",
             "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "meetupLocation",
+            "columnName": "meetupLocation",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "buyerMeetupConfirmed",
+            "columnName": "buyerMeetupConfirmed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sellerMeetupConfirmed",
+            "columnName": "sellerMeetupConfirmed",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -585,7 +602,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '746f4fddf34cb4019c3cae64fb110b3d')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a25da9bfd48f547666383a3264cf2146')"
     ]
   }
 }
