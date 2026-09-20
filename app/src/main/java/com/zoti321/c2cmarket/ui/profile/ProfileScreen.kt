@@ -62,7 +62,7 @@ import com.zoti321.c2cmarket.R
 import com.zoti321.c2cmarket.domain.model.AuthState
 import com.zoti321.c2cmarket.domain.model.BrowseHistoryItem
 import com.zoti321.c2cmarket.domain.model.ListingStatus
-import com.zoti321.c2cmarket.domain.model.OrderStatus
+import com.zoti321.c2cmarket.ui.common.orderStatusLabelRes
 import com.zoti321.c2cmarket.domain.model.OrderSummary
 import com.zoti321.c2cmarket.domain.model.Product
 import com.zoti321.c2cmarket.domain.model.displayOrderNumber
@@ -464,7 +464,6 @@ private fun MyListingRow(
     )
 }
 
-@Composable
 private fun listingStatusLabel(status: ListingStatus): Int = when (status) {
     ListingStatus.AVAILABLE -> R.string.listing_status_available
     ListingStatus.RESERVED -> R.string.listing_status_reserved
@@ -485,7 +484,7 @@ private fun OrderCard(
         supportingContent = {
             Text(
                 text = "${order.createdAt.formatOrderDateTime()} · " +
-                    stringResource(orderStatusLabel(order.status)),
+                    stringResource(orderStatusLabelRes(order.status)),
             )
             Text(
                 text = stringResource(R.string.price_format, order.totalAmount) + " · " +
@@ -499,10 +498,3 @@ private fun OrderCard(
     )
 }
 
-@Composable
-private fun orderStatusLabel(status: OrderStatus): Int = when (status) {
-    OrderStatus.PENDING -> R.string.order_status_pending
-    OrderStatus.CONFIRMED -> R.string.order_status_confirmed
-    OrderStatus.COMPLETED -> R.string.order_status_completed
-    OrderStatus.CANCELLED -> R.string.order_status_cancelled
-}

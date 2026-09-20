@@ -116,6 +116,26 @@ class ListingRepositoryImplTest {
     }
 
     @Test
+    fun markReservedForCheckout_updatesAvailableListing() = runTest {
+        val listing = repository.create(validInput("Checkout Item")).getOrThrow()
+
+        repository.markReservedForCheckout(listOf(listing.id))
+
+        val stored = database.listingDao().getByCatalogId(listing.id)
+        assertEquals(com.zoti321.c2cmarket.domain.model.ListingStatus.RESERVED.name, stored?.status)
+    }
+
+    @Test
+    fun updateStatus_canMarkRemoved() = runTest {
+        val listing = repository.create(validInput("Removed Item")).getOrThrow()
+
+        repository.updateStatus(listing.id, com.zoti321.c2cmarket.domain.model.ListingStatus.REMOVED)
+
+        val stored = database.listingDao().getByCatalogId(listing.id)
+        assertEquals("REMOVED", stored?.status)
+    }
+
+    @Test
     fun delete_reservedListing_fails() = runTest {
         val listing = repository.create(validInput("Reserved Item")).getOrThrow()
         database.listingDao().updateStatus(listing.id, "RESERVED", System.currentTimeMillis())

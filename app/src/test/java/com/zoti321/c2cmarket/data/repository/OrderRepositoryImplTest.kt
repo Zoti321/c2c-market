@@ -11,6 +11,7 @@ import com.zoti321.c2cmarket.data.local.entity.OrderLineItemEntity
 import com.zoti321.c2cmarket.domain.model.ListingStatus
 import com.zoti321.c2cmarket.domain.model.OrderStatus
 import com.zoti321.c2cmarket.domain.model.ShippingInfo
+import com.zoti321.c2cmarket.domain.scheduler.OrderNotificationKind
 import com.zoti321.c2cmarket.domain.scheduler.OrderNotificationScheduler
 import com.zoti321.c2cmarket.notification.NotificationHelper
 import androidx.test.core.app.ApplicationProvider
@@ -76,7 +77,6 @@ class OrderRepositoryImplTest {
         repository = OrderRepositoryImpl(
             orderDao = orderDao,
             cartDao = cartDao,
-            listingDao = database.listingDao(),
             authRepository = FakeAuthRepository(),
             listingRepository = listingRepository,
             notificationHelper = NotificationHelper(ApplicationProvider.getApplicationContext()),
@@ -99,7 +99,7 @@ class OrderRepositoryImplTest {
         assertEquals(shipping.receiverName, order.shipping?.receiverName)
         assertTrue(cartDao.items.isEmpty())
         assertEquals(1, orderDao.placedLineItems.size)
-        assertTrue(scheduler.wasScheduled)
+        assertEquals(listOf(OrderNotificationKind.SHIPPED), scheduler.scheduledKinds)
     }
 
     @Test
@@ -110,7 +110,7 @@ class OrderRepositoryImplTest {
 
         assertTrue(result.isFailure)
         assertTrue(result.exceptionOrNull() is EmptyCartException)
-        assertTrue(!scheduler.wasScheduled)
+        assertTrue(scheduler.scheduledKinds.isEmpty())
     }
 
     @Test
@@ -154,7 +154,6 @@ class OrderRepositoryImplTest {
         repository = OrderRepositoryImpl(
             orderDao = orderDao,
             cartDao = cartDao,
-            listingDao = database.listingDao(),
             authRepository = FakeAuthRepository(),
             listingRepository = listingRepository,
             notificationHelper = NotificationHelper(ApplicationProvider.getApplicationContext()),
@@ -165,6 +164,7 @@ class OrderRepositoryImplTest {
 
         val listing = database.listingDao().getByCatalogId(-1)
         assertEquals(ListingStatus.RESERVED.name, listing?.status)
+        assertEquals(listOf(OrderNotificationKind.PENDING_SELLER), scheduler.scheduledKinds)
     }
 
     @Test
@@ -206,7 +206,6 @@ class OrderRepositoryImplTest {
         val sellerRepo = OrderRepositoryImpl(
             orderDao = database.orderDao(),
             cartDao = cartDao,
-            listingDao = database.listingDao(),
             authRepository = FakeAuthRepository(initialUserId = sellerId),
             listingRepository = listingRepository,
             notificationHelper = NotificationHelper(ApplicationProvider.getApplicationContext()),
@@ -260,7 +259,6 @@ class OrderRepositoryImplTest {
         val repo = OrderRepositoryImpl(
             orderDao = database.orderDao(),
             cartDao = cartDao,
-            listingDao = database.listingDao(),
             authRepository = FakeAuthRepository(initialUserId = sellerId),
             listingRepository = listingRepository,
             notificationHelper = NotificationHelper(ApplicationProvider.getApplicationContext()),
@@ -271,6 +269,7 @@ class OrderRepositoryImplTest {
 
         val updated = database.orderDao().getById(orderId)
         assertEquals(OrderStatus.CONFIRMED.name, updated?.status)
+        assertEquals(listOf(OrderNotificationKind.CONFIRMED_BUYER), scheduler.scheduledKinds)
     }
 
     @Test
@@ -313,7 +312,6 @@ class OrderRepositoryImplTest {
         val buyerRepo = OrderRepositoryImpl(
             orderDao = database.orderDao(),
             cartDao = cartDao,
-            listingDao = database.listingDao(),
             authRepository = FakeAuthRepository(),
             listingRepository = listingRepository,
             notificationHelper = NotificationHelper(ApplicationProvider.getApplicationContext()),
@@ -322,7 +320,6 @@ class OrderRepositoryImplTest {
         val sellerRepo = OrderRepositoryImpl(
             orderDao = database.orderDao(),
             cartDao = cartDao,
-            listingDao = database.listingDao(),
             authRepository = FakeAuthRepository(initialUserId = sellerId),
             listingRepository = listingRepository,
             notificationHelper = NotificationHelper(ApplicationProvider.getApplicationContext()),
@@ -334,6 +331,7 @@ class OrderRepositoryImplTest {
 
         assertEquals(OrderStatus.COMPLETED.name, database.orderDao().getById(orderId)?.status)
         assertEquals(ListingStatus.SOLD.name, database.listingDao().getByCatalogId(-1)?.status)
+        assertEquals(listOf(OrderNotificationKind.COMPLETED), scheduler.scheduledKinds)
     }
 }
 
@@ -430,14 +428,13 @@ private class FakeOrderDaoForOrder(
 }
 
 private class RecordingOrderNotificationScheduler : OrderNotificationScheduler {
-    var wasScheduled = false
-        private set
+    val scheduledKinds = mutableListOf<OrderNotificationKind>()
 
     override fun schedule(
         orderId: Long,
         orderNumber: String,
-        kind: com.zoti321.c2cmarket.domain.scheduler.OrderNotificationKind,
+        kind: OrderNotificationKind,
     ) {
-        wasScheduled = true
+        scheduledKinds.add(kind)
     }
 }

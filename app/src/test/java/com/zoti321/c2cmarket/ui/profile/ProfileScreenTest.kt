@@ -78,6 +78,7 @@ class ProfileScreenTest {
         }
         composeRule.waitForIdle()
         composeRule.onNodeWithText("我的收藏").assertExists()
+        composeRule.onNodeWithText("我的消息").assertExists()
         composeRule.onNodeWithText("收到的消息").assertExists()
     }
 

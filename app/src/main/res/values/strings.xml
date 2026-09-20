@@ -67,8 +67,8 @@
     <string name="order_status_confirmed">待面交</string>
     <string name="order_status_cancelled">已取消</string>
     <string name="listing_status_available">在售</string>
-    <string name="listing_status_reserved">已预订</string>
-    <string name="listing_status_sold">已售出</string>
+    <string name="listing_status_reserved">已下单</string>
+    <string name="listing_status_sold">已成交</string>
     <string name="listing_status_removed">已下架</string>
     <string name="listing_mark_sold">标记已售</string>
     <string name="listing_mark_removed">下架</string>

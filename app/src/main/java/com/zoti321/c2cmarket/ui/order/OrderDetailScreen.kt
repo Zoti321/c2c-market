@@ -43,6 +43,7 @@ import com.zoti321.c2cmarket.R
 import com.zoti321.c2cmarket.domain.model.Order
 import com.zoti321.c2cmarket.domain.model.OrderLineItem
 import com.zoti321.c2cmarket.domain.model.OrderStatus
+import com.zoti321.c2cmarket.ui.common.orderStatusLabelRes
 import com.zoti321.c2cmarket.domain.model.displayOrderNumber
 import com.zoti321.c2cmarket.domain.model.isMeetupOrder
 import com.zoti321.c2cmarket.ui.common.ErrorContent
@@ -112,7 +113,7 @@ fun OrderDetailScreen(
                         )
                         AssistChip(
                             onClick = {},
-                            label = { Text(stringResource(orderStatusLabel(order.status))) },
+                            label = { Text(stringResource(orderStatusLabelRes(order.status))) },
                             modifier = Modifier.padding(top = 8.dp),
                         )
                         if (order.isMeetupOrder()) {
@@ -266,13 +267,6 @@ private fun OrderActionBar(
             }
         }
     }
-}
-
-private fun orderStatusLabel(status: OrderStatus): Int = when (status) {
-    OrderStatus.PENDING -> R.string.order_status_pending
-    OrderStatus.CONFIRMED -> R.string.order_status_confirmed
-    OrderStatus.COMPLETED -> R.string.order_status_completed
-    OrderStatus.CANCELLED -> R.string.order_status_cancelled
 }
 
 @Composable

@@ -70,6 +70,24 @@ class FavoriteRepositoryImplTest {
         assertEquals(1, favorites.size)
         assertEquals(product.id, favorites.first().id)
     }
+
+    @Test
+    fun observeFavorites_isolatedAfterSignOut() = runTest {
+        val auth = FakeAuthRepository()
+        repository = FavoriteRepositoryImpl(dao, auth, FakeProductRepository(product))
+        repository.toggleFavorite(product)
+
+        auth.setSignedIn(
+            com.zoti321.c2cmarket.domain.model.UserProfile(
+                userId = UserIds.google("other"),
+                displayName = "Other",
+                email = null,
+                photoUrl = null,
+            ),
+        )
+
+        assertTrue(repository.observeFavorites().first().isEmpty())
+    }
 }
 
 private class FakeProductRepository(

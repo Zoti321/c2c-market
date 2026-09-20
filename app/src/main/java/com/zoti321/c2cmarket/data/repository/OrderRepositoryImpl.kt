@@ -2,7 +2,6 @@ package com.zoti321.c2cmarket.data.repository
 
 import com.zoti321.c2cmarket.data.error.EmptyCartException
 import com.zoti321.c2cmarket.data.local.dao.CartDao
-import com.zoti321.c2cmarket.data.local.dao.ListingDao
 import com.zoti321.c2cmarket.data.local.dao.OrderDao
 import com.zoti321.c2cmarket.data.local.entity.OrderEntity
 import com.zoti321.c2cmarket.data.local.entity.OrderLineItemEntity
@@ -31,7 +30,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 class OrderRepositoryImpl @Inject constructor(
     private val orderDao: OrderDao,
     private val cartDao: CartDao,
-    private val listingDao: ListingDao,
     private val authRepository: AuthRepository,
     private val listingRepository: ListingRepository,
     private val notificationHelper: NotificationHelper,
@@ -49,7 +47,8 @@ class OrderRepositoryImpl @Inject constructor(
         val isMeetupOrder = localCatalogIds.isNotEmpty()
         val meetupLocation = if (isMeetupOrder) {
             localCatalogIds.firstNotNullOfOrNull { catalogId ->
-                listingDao.getByCatalogId(catalogId)?.meetupLocation?.takeIf { it.isNotBlank() }
+                listingRepository.getProductByCatalogId(catalogId).getOrNull()
+                    ?.meetupLocation?.takeIf { it.isNotBlank() }
             }
         } else {
             null
@@ -220,7 +219,7 @@ class OrderRepositoryImpl @Inject constructor(
     private suspend fun isSellerOrder(orderId: Long, userId: String): Boolean {
         val localProductIds = orderDao.getLocalLineItemProductIds(orderId)
         return localProductIds.any { catalogId ->
-            listingDao.getByCatalogId(catalogId)?.sellerId == userId
+            listingRepository.getSellerId(catalogId) == userId
         }
     }
 }

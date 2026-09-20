@@ -14,6 +14,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -48,17 +51,24 @@ class OrderDetailViewModel @Inject constructor(
     val uiState: StateFlow<OrderDetailUiState> = combine(
         orderRepository.observeOrder(orderId),
         authRepository.currentUserId(),
-        orderRepository.observeOrdersAsSeller(),
-    ) { order, userId, sellerOrders ->
-        when {
-            order == null -> OrderDetailUiState.NotFound
-            else -> OrderDetailUiState.Success(
-                order = order,
-                isBuyer = order.guestId == userId,
-                isSeller = sellerOrders.any { it.id == orderId },
-            )
+    ) { order, userId -> order to userId }
+        .flatMapLatest { (order, userId) ->
+            if (order == null) {
+                flowOf<OrderDetailUiState>(OrderDetailUiState.NotFound)
+            } else {
+                flow<OrderDetailUiState> {
+                    val isSeller = orderRepository.isSellerForOrder(orderId)
+                    emit(
+                        OrderDetailUiState.Success(
+                            order = order,
+                            isBuyer = order.guestId == userId,
+                            isSeller = isSeller,
+                        ),
+                    )
+                }
+            }
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), OrderDetailUiState.Loading)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), OrderDetailUiState.Loading)
 
     fun confirmOrderAsSeller() = runAction { orderRepository.confirmOrderAsSeller(orderId) }
 
