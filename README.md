@@ -59,14 +59,14 @@
 
 ### v4（当前阶段）
 
-**路线图**（[#41](https://github.com/Zoti321/c2c-market/issues/41)）**决策路线待锁定**（#42–#47）；在 `feature/v4` 上按 canonical spec `/implement`，完成后单 PR 合入 `main`（`4.0.0`）。
+**路线图**（[#41](https://github.com/Zoti321/c2c-market/issues/41)）**决策路线已完成**（#42–#47）；在 `feature/v4` 上按 canonical spec `/implement`，完成后单 PR 合入 `main`（`4.0.0`）。
 
 - [x] v4.1 卖家私信收件箱 + 双向聊天（[约定 v4.1 规格](https://github.com/Zoti321/c2c-market/issues/42)）
 - [x] v4.2 挂牌状态机 + 卖家订单视图（[约定 v4.2 规格](https://github.com/Zoti321/c2c-market/issues/43)）
 - [x] v4.3 订单生命周期 + 面交确认流（[约定 v4.3 规格](https://github.com/Zoti321/c2c-market/issues/44)）
 - [x] v4.4 收藏列表 + Cart/Favorites 用户隔离（[约定 v4.4 规格](https://github.com/Zoti321/c2c-market/issues/45)）
-- [ ] v4.5 测试（[约定 v4.5 测试范围与策略规格](https://github.com/Zoti321/c2c-market/issues/46)）
-- [ ] v4.6 Release + R8（[约定 v4.6 Release、R8 与 CI 规格](https://github.com/Zoti321/c2c-market/issues/47)）
+- [x] v4.5 测试（[约定 v4.5 测试范围与策略规格](https://github.com/Zoti321/c2c-market/issues/46)）
+- [x] v4.6 Release + R8（[约定 v4.6 Release、R8 与 CI 规格](https://github.com/Zoti321/c2c-market/issues/47)）
 
 **v5+ 后端（调研中，v4 不引入）**：[`docs/research/baas-backend-options.md`](docs/research/baas-backend-options.md) · [ADR-0010](docs/adr/0010-defer-baas-backend-to-v5-plus.md)
 
