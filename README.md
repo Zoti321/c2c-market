@@ -1,6 +1,6 @@
 # C2C Market（原生 Android 学习项目）
 
-> **路线图**：[C2C Market v3 — 路线图 (#29)](https://github.com/Zoti321/c2c-market/issues/29) · v2 已交付 ([#19](https://github.com/Zoti321/c2c-market/issues/19) · PR #27)
+> **路线图**：[C2C Market v4 — 路线图 (#41)](https://github.com/Zoti321/c2c-market/issues/41) · v3 已交付 ([#29](https://github.com/Zoti321/c2c-market/issues/29) · PR #40)
 
 通过开发一个买家闭环的 C2C 市场应用，系统学习原生 Android 开发。项目基于 **Kotlin + Jetpack Compose + Material 3 + Hilt**，逐步引入网络请求、Paging、Room 本地存储与 MVVM 架构分层。
 
@@ -47,15 +47,28 @@
 - [x] v2.5 测试（[约定 v2.5 测试范围与策略规格](https://github.com/Zoti321/c2c-market/issues/25)）
 - [x] v2.6 Release + R8（[约定 v2.6 Release、R8 与 CI 规格](https://github.com/Zoti321/c2c-market/issues/26)）
 
-### v3（当前阶段）
+### v3（已交付）
 
-**路线图**（[#29](https://github.com/Zoti321/c2c-market/issues/29)）**决策路线已完成**（#30–#34）；在 `feature/v3` 上按 canonical spec `/implement`，完成后单 PR 合入 `main`（`3.0.0`）。
+**路线图**（[#29](https://github.com/Zoti321/c2c-market/issues/29)）**已合入 `main`**（`3.0.0`，PR #40）。
 
 - [x] v3.1 私信 / 聊天（[约定 v3.1 私信与聊天规格](https://github.com/Zoti321/c2c-market/issues/30)）
 - [x] v3.2 Google Sign-In（[约定 v3.2 Google Sign-In 与账号规格](https://github.com/Zoti321/c2c-market/issues/31)）
 - [x] v3.3 Deep Link / 地图（[约定 v3.3 Deep Link 与地图规格](https://github.com/Zoti321/c2c-market/issues/32)）
 - [x] v3.4 测试（[约定 v3.4 测试范围与策略规格](https://github.com/Zoti321/c2c-market/issues/33)）
 - [x] v3.5 Release + R8（[约定 v3.5 Release、R8 与 CI 规格](https://github.com/Zoti321/c2c-market/issues/34)）
+
+### v4（当前阶段）
+
+**路线图**（[#41](https://github.com/Zoti321/c2c-market/issues/41)）**决策路线待锁定**（#42–#47）；在 `feature/v4` 上按 canonical spec `/implement`，完成后单 PR 合入 `main`（`4.0.0`）。
+
+- [ ] v4.1 卖家私信收件箱 + 双向聊天（[约定 v4.1 规格](https://github.com/Zoti321/c2c-market/issues/42)）
+- [ ] v4.2 挂牌状态机 + 卖家订单视图（[约定 v4.2 规格](https://github.com/Zoti321/c2c-market/issues/43)）
+- [ ] v4.3 订单生命周期 + 面交确认流（[约定 v4.3 规格](https://github.com/Zoti321/c2c-market/issues/44)）
+- [ ] v4.4 收藏列表 + Cart/Favorites 用户隔离（[约定 v4.4 规格](https://github.com/Zoti321/c2c-market/issues/45)）
+- [ ] v4.5 测试（[约定 v4.5 测试范围与策略规格](https://github.com/Zoti321/c2c-market/issues/46)）
+- [ ] v4.6 Release + R8（[约定 v4.6 Release、R8 与 CI 规格](https://github.com/Zoti321/c2c-market/issues/47)）
+
+**v5+ 后端（调研中，v4 不引入）**：[`docs/research/baas-backend-options.md`](docs/research/baas-backend-options.md) · [ADR-0010](docs/adr/0010-defer-baas-backend-to-v5-plus.md)
 
 领域术语见 [`CONTEXT.md`](CONTEXT.md)；架构决策见 [`docs/adr/`](docs/adr/)。
 
