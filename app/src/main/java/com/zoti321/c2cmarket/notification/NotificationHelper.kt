@@ -21,7 +21,7 @@ import javax.inject.Singleton
 @Singleton
 class NotificationHelper @Inject constructor(
     @ApplicationContext private val context: Context,
-) {
+) : PushNotificationPresenter {
     fun hasNotificationPermission(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
         return ContextCompat.checkSelfPermission(
@@ -133,7 +133,7 @@ class NotificationHelper @Inject constructor(
     }
 
     @SuppressLint("MissingPermission")
-    fun showChatMessage(localConversationId: Long, title: String, body: String) {
+    override fun showChatMessage(localConversationId: Long, title: String, body: String) {
         if (!hasNotificationPermission()) return
         ensureChannels()
         val intent = Intent(Intent.ACTION_VIEW, DeepLinkParser.chatUri(localConversationId)).apply {
@@ -157,7 +157,7 @@ class NotificationHelper @Inject constructor(
     }
 
     @SuppressLint("MissingPermission")
-    fun showChatMessageFallback(title: String, body: String) {
+    override fun showChatMessageFallback(title: String, body: String) {
         if (!hasNotificationPermission()) return
         ensureChannels()
         val notification = NotificationCompat.Builder(context, CHANNEL_CHAT)
@@ -170,7 +170,7 @@ class NotificationHelper @Inject constructor(
     }
 
     @SuppressLint("MissingPermission")
-    fun showOrderUpdate(
+    override fun showOrderUpdate(
         orderId: Long,
         title: String,
         body: String,
@@ -189,7 +189,7 @@ class NotificationHelper @Inject constructor(
     }
 
     @SuppressLint("MissingPermission")
-    fun showOrderUpdateFallback(title: String, body: String) {
+    override fun showOrderUpdateFallback(title: String, body: String) {
         if (!hasNotificationPermission()) return
         ensureChannels()
         val notification = NotificationCompat.Builder(context, CHANNEL_ORDERS)

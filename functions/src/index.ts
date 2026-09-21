@@ -85,16 +85,33 @@ export const onOrderStatusChanged = onDocumentUpdated(
       body,
     };
 
-    const buyerUid = await resolveFirebaseUid(buyerId);
-    if (buyerUid) {
-      await sendDataMessage(await loadTokens(buyerUid), payload);
-    }
-    const sellerUid = await resolveFirebaseUid(sellerId);
-    if (sellerUid) {
-      await sendDataMessage(await loadTokens(sellerUid), payload);
+    const recipientBusinessIds = recipientsForStatus(status, buyerId, sellerId);
+    for (const businessId of recipientBusinessIds) {
+      const uid = await resolveFirebaseUid(businessId);
+      if (!uid) continue;
+      await sendDataMessage(await loadTokens(uid), payload);
     }
   },
 );
+
+function recipientsForStatus(
+  status: string,
+  buyerId: string,
+  sellerId: string,
+): string[] {
+  switch (status) {
+    case "PENDING":
+      return [sellerId];
+    case "CONFIRMED":
+      return [buyerId];
+    case "COMPLETED":
+      return [buyerId, sellerId];
+    case "CANCELLED":
+      return [buyerId, sellerId];
+    default:
+      return [];
+  }
+}
 
 function mapOrderKind(status: string): string {
   switch (status) {

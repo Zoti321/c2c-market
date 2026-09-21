@@ -10,10 +10,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 @Singleton
-class AppForegroundTracker @Inject constructor() : DefaultLifecycleObserver {
+class AppForegroundTracker @Inject constructor() : DefaultLifecycleObserver, AppForegroundState {
 
     private val _isForeground = MutableStateFlow(false)
-    val isForeground: StateFlow<Boolean> = _isForeground.asStateFlow()
+    override val isForeground: StateFlow<Boolean> = _isForeground.asStateFlow()
 
     fun register() {
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)

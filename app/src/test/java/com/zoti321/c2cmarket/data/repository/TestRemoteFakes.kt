@@ -212,7 +212,6 @@ fun createListingRepository(
     authRepository = authRepository,
     listingRemote = deps.listingRemote,
     firebaseAuthGateway = deps.firebaseAuth,
-    applicationScope = deps.scope,
     ioDispatcher = deps.dispatcher,
 )
 

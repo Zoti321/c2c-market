@@ -2,31 +2,16 @@ package com.zoti321.c2cmarket.data.sync
 
 import com.zoti321.c2cmarket.data.firebase.FirebaseAuthGateway
 import com.zoti321.c2cmarket.data.firebase.FcmTokenRepository
-import com.zoti321.c2cmarket.data.firebase.ListingStatusTransitions
-import com.zoti321.c2cmarket.data.firebase.OrderStatusTransitions
-import com.zoti321.c2cmarket.data.local.dao.ConversationDao
-import com.zoti321.c2cmarket.data.local.dao.ListingDao
-import com.zoti321.c2cmarket.data.local.dao.MessageDao
-import com.zoti321.c2cmarket.data.local.dao.OrderDao
-import com.zoti321.c2cmarket.data.local.entity.ConversationEntity
-import com.zoti321.c2cmarket.data.local.entity.ListingEntity
-import com.zoti321.c2cmarket.data.local.entity.MessageEntity
-import com.zoti321.c2cmarket.data.local.entity.OrderEntity
-import com.zoti321.c2cmarket.data.local.entity.OrderLineItemEntity
-import com.zoti321.c2cmarket.data.local.entity.SyncStateValues
-import com.zoti321.c2cmarket.data.mapper.toEntityValue
+import com.zoti321.c2cmarket.data.sync.merger.ConversationRemoteMerger
+import com.zoti321.c2cmarket.data.sync.merger.ListingRemoteMerger
+import com.zoti321.c2cmarket.data.sync.merger.MessageRemoteMerger
+import com.zoti321.c2cmarket.data.sync.merger.OrderRemoteMerger
 import com.zoti321.c2cmarket.di.ApplicationScope
 import com.zoti321.c2cmarket.di.IoDispatcher
 import com.zoti321.c2cmarket.domain.datasource.ChatRemoteDataSource
 import com.zoti321.c2cmarket.domain.datasource.ListingRemoteDataSource
 import com.zoti321.c2cmarket.domain.datasource.OrderRemoteDataSource
-import com.zoti321.c2cmarket.domain.datasource.RemoteConversation
-import com.zoti321.c2cmarket.domain.datasource.RemoteListing
-import com.zoti321.c2cmarket.domain.datasource.RemoteOrder
 import com.zoti321.c2cmarket.domain.model.AuthState
-import com.zoti321.c2cmarket.domain.model.ListingStatus
-import com.zoti321.c2cmarket.domain.model.MessageStatus
-import com.zoti321.c2cmarket.domain.model.OrderStatus
 import com.zoti321.c2cmarket.domain.repository.AuthRepository
 import com.google.firebase.messaging.FirebaseMessaging
 import javax.inject.Inject
@@ -49,10 +34,11 @@ class RemoteSyncCoordinator @Inject constructor(
     private val chatRemote: ChatRemoteDataSource,
     private val listingRemote: ListingRemoteDataSource,
     private val orderRemote: OrderRemoteDataSource,
-    private val conversationDao: ConversationDao,
-    private val messageDao: MessageDao,
-    private val listingDao: ListingDao,
-    private val orderDao: OrderDao,
+    private val conversationMerger: ConversationRemoteMerger,
+    private val messageMerger: MessageRemoteMerger,
+    private val listingMerger: ListingRemoteMerger,
+    private val orderMerger: OrderRemoteMerger,
+    private val listingImageMigrator: ListingImageMigrator,
     private val fcmTokenRepository: FcmTokenRepository,
     @ApplicationScope private val applicationScope: CoroutineScope,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
@@ -76,7 +62,7 @@ class RemoteSyncCoordinator @Inject constructor(
                     if (userId == null || !firebaseAuthGateway.isSignedIn()) return@collectLatest
                     syncJob = launch { observeRemoteData(userId) }
                     registerFcmToken()
-                    listingRemote.migratePendingImages(userId)
+                    listingImageMigrator.migrateContentUrisForSeller(userId)
                 }
         }
     }
@@ -86,7 +72,9 @@ class RemoteSyncCoordinator @Inject constructor(
         if (!firebaseAuthGateway.isSignedIn()) return
         activeMessagesJob = applicationScope.launch(ioDispatcher) {
             chatRemote.observeRemoteMessages(conversationRemoteId).collect { messages ->
-                messages.forEach { mergeRemoteMessage(conversationRemoteId, it) }
+                withContext(ioDispatcher) {
+                    messages.forEach { messageMerger.merge(conversationRemoteId, it) }
+                }
             }
         }
     }
@@ -98,10 +86,26 @@ class RemoteSyncCoordinator @Inject constructor(
 
     private suspend fun observeRemoteData(userId: String) {
         coroutineScope {
-            launch { chatRemote.observeRemoteConversations(userId).collect { mergeRemoteConversations(it) } }
-            launch { listingRemote.observeRemoteListingsAsSeller(userId).collect { mergeRemoteListings(it) } }
-            launch { listingRemote.observeAvailableListings().collect { mergeRemoteListings(it) } }
-            launch { orderRemote.observeRemoteOrders(userId).collect { mergeRemoteOrders(it) } }
+            launch {
+                chatRemote.observeRemoteConversations(userId).collect { remote ->
+                    withContext(ioDispatcher) { conversationMerger.mergeAll(remote) }
+                }
+            }
+            launch {
+                listingRemote.observeRemoteListingsAsSeller(userId).collect { remote ->
+                    withContext(ioDispatcher) { listingMerger.mergeAll(remote) }
+                }
+            }
+            launch {
+                listingRemote.observeAvailableListings().collect { remote ->
+                    withContext(ioDispatcher) { listingMerger.mergeAll(remote) }
+                }
+            }
+            launch {
+                orderRemote.observeRemoteOrders(userId).collect { remote ->
+                    withContext(ioDispatcher) { orderMerger.mergeAll(remote) }
+                }
+            }
         }
     }
 
@@ -118,166 +122,4 @@ class RemoteSyncCoordinator @Inject constructor(
             fcmTokenRepository.deleteToken(token)
         }
     }
-
-    private suspend fun mergeRemoteConversations(remote: List<RemoteConversation>) {
-        withContext(ioDispatcher) {
-            remote.forEach { item ->
-                val existing = conversationDao.findByRemoteId(item.remoteId)
-                    ?: conversationDao.findByUniqueKey(item.buyerId, item.sellerId, item.productId)
-                if (existing == null) {
-                    conversationDao.insert(
-                        ConversationEntity(
-                            productId = item.productId,
-                            productTitle = item.productTitle,
-                            productImageUrl = item.productImageUrl,
-                            sellerId = item.sellerId,
-                            sellerDisplayName = item.sellerDisplayName,
-                            buyerId = item.buyerId,
-                            buyerDisplayName = item.buyerDisplayName,
-                            lastMessagePreview = item.lastMessagePreview,
-                            lastMessageAt = item.lastMessageAt,
-                            unreadCount = item.unreadCount,
-                            sellerUnreadCount = item.sellerUnreadCount,
-                            createdAt = item.createdAt,
-                            remoteId = item.remoteId,
-                        ),
-                    )
-                } else {
-                    conversationDao.update(
-                        existing.copy(
-                            remoteId = item.remoteId,
-                            productTitle = item.productTitle,
-                            productImageUrl = item.productImageUrl,
-                            buyerDisplayName = item.buyerDisplayName,
-                            sellerDisplayName = item.sellerDisplayName,
-                        ),
-                    )
-                    conversationDao.mergePreviewIfNewer(
-                        id = existing.id,
-                        preview = item.lastMessagePreview,
-                        lastMessageAt = item.lastMessageAt,
-                        unreadCount = item.unreadCount,
-                        sellerUnreadCount = item.sellerUnreadCount,
-                    )
-                }
-            }
-        }
-    }
-
-    private suspend fun mergeRemoteMessage(conversationRemoteId: String, remote: com.zoti321.c2cmarket.domain.datasource.RemoteMessage) {
-        withContext(ioDispatcher) {
-            if (messageDao.findByRemoteId(remote.remoteId) != null) return@withContext
-            val conversation = conversationDao.findByRemoteId(conversationRemoteId) ?: return@withContext
-            messageDao.insert(
-                MessageEntity(
-                    conversationId = conversation.id,
-                    senderId = remote.senderId,
-                    body = remote.body,
-                    status = MessageStatus.SENT.toEntityValue(),
-                    sentAt = remote.sentAt,
-                    isRead = remote.isRead,
-                    remoteId = remote.remoteId,
-                    syncState = SyncStateValues.SYNCED,
-                ),
-            )
-            conversationDao.mergePreviewIfNewer(
-                id = conversation.id,
-                preview = remote.body,
-                lastMessageAt = remote.sentAt,
-                unreadCount = conversation.unreadCount,
-                sellerUnreadCount = conversation.sellerUnreadCount,
-            )
-        }
-    }
-
-    private suspend fun mergeRemoteListings(remote: List<RemoteListing>) {
-        withContext(ioDispatcher) {
-            remote.forEach { item ->
-                val existing = listingDao.getByCatalogId(item.catalogId)
-                if (existing == null) {
-                    listingDao.insert(item.toEntity())
-                } else {
-                    val currentStatus = runCatching { ListingStatus.valueOf(existing.status) }
-                        .getOrDefault(ListingStatus.AVAILABLE)
-                    val mergedStatus = if (ListingStatusTransitions.canTransition(currentStatus, item.status)) {
-                        item.status.name
-                    } else {
-                        existing.status
-                    }
-                    val mergedUpdatedAt = maxOf(existing.updatedAt, item.updatedAt)
-                    listingDao.update(
-                        existing.copy(
-                            title = if (item.updatedAt >= existing.updatedAt) item.title else existing.title,
-                            price = if (item.updatedAt >= existing.updatedAt) item.price else existing.price,
-                            description = if (item.updatedAt >= existing.updatedAt) item.description else existing.description,
-                            category = if (item.updatedAt >= existing.updatedAt) item.category else existing.category,
-                            imageUri = if (item.updatedAt >= existing.updatedAt) item.imageUrl else existing.imageUri,
-                            meetupLocation = if (item.updatedAt >= existing.updatedAt) item.meetupLocation else existing.meetupLocation,
-                            status = mergedStatus,
-                            updatedAt = mergedUpdatedAt,
-                        ),
-                    )
-                }
-            }
-        }
-    }
-
-    private suspend fun mergeRemoteOrders(remote: List<RemoteOrder>) {
-        withContext(ioDispatcher) {
-            remote.forEach { item ->
-                val existing = orderDao.findByRemoteId(item.remoteId)
-                if (existing == null) {
-                    val orderId = orderDao.insertOrder(
-                        OrderEntity(
-                            guestId = item.buyerId,
-                            totalAmount = item.totalAmount,
-                            status = item.status.name,
-                            createdAt = item.createdAt,
-                            meetupLocation = item.meetupLocation,
-                            buyerMeetupConfirmed = item.buyerMeetupConfirmed,
-                            sellerMeetupConfirmed = item.sellerMeetupConfirmed,
-                            remoteId = item.remoteId,
-                            syncState = SyncStateValues.SYNCED,
-                        ),
-                    )
-                    orderDao.insertLineItems(
-                        item.lineItems.map { line ->
-                            OrderLineItemEntity(
-                                orderId = orderId,
-                                productId = line.productId,
-                                title = line.title,
-                                unitPrice = line.unitPrice,
-                                quantity = line.quantity,
-                                imageUrl = line.imageUrl,
-                            )
-                        },
-                    )
-                } else {
-                    val currentStatus = runCatching { OrderStatus.valueOf(existing.status) }
-                        .getOrDefault(OrderStatus.PENDING)
-                    val mergedStatus = if (OrderStatusTransitions.canTransition(currentStatus, item.status)) {
-                        item.status.name
-                    } else {
-                        existing.status
-                    }
-                    orderDao.updateRemoteSync(existing.id, item.remoteId, SyncStateValues.SYNCED)
-                    orderDao.updateStatus(existing.id, mergedStatus)
-                }
-            }
-        }
-    }
-
-    private fun RemoteListing.toEntity(): ListingEntity = ListingEntity(
-        catalogId = catalogId,
-        title = title,
-        price = price,
-        description = description,
-        category = category,
-        imageUri = imageUrl,
-        sellerId = sellerId,
-        status = status.name,
-        meetupLocation = meetupLocation,
-        createdAt = createdAt,
-        updatedAt = updatedAt,
-    )
 }

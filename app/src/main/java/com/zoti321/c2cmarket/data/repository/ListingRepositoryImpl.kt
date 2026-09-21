@@ -11,7 +11,6 @@ import com.zoti321.c2cmarket.data.local.dao.ListingDao
 import com.zoti321.c2cmarket.data.local.dao.OrderDao
 import com.zoti321.c2cmarket.data.mapper.toEntity
 import com.zoti321.c2cmarket.data.mapper.toProduct
-import com.zoti321.c2cmarket.di.ApplicationScope
 import com.zoti321.c2cmarket.di.IoDispatcher
 import com.zoti321.c2cmarket.domain.datasource.ListingRemoteDataSource
 import com.zoti321.c2cmarket.domain.error.ProductNotFoundException
@@ -24,14 +23,13 @@ import com.zoti321.c2cmarket.domain.repository.ListingRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Singleton
 @Suppress("TooManyFunctions")
 class ListingRepositoryImpl @Inject constructor(
@@ -43,7 +41,6 @@ class ListingRepositoryImpl @Inject constructor(
     private val authRepository: AuthRepository,
     private val listingRemote: ListingRemoteDataSource,
     private val firebaseAuthGateway: FirebaseAuthGateway,
-    @ApplicationScope private val applicationScope: CoroutineScope,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : ListingRepository {
 
@@ -199,32 +196,6 @@ class ListingRepositoryImpl @Inject constructor(
     private suspend fun shouldUseRemote(): Boolean =
         firebaseAuthGateway.isSignedIn() &&
             authRepository.currentUserId().first() != UserIds.GUEST
-
-    init {
-        applicationScope.launch(ioDispatcher) {
-            authRepository.currentUserId().collect { userId ->
-                if (userId != UserIds.GUEST && firebaseAuthGateway.isSignedIn()) {
-                    migrateContentUrisForSeller(userId)
-                }
-            }
-        }
-    }
-
-    private suspend fun migrateContentUrisForSeller(sellerId: String) {
-        val listings = listingDao.observeBySellerId(sellerId).first()
-        var migrated = 0
-        listings.filter { it.imageUri.startsWith("content://") }.forEach { listing ->
-            listingRemote.uploadListingImage(listing.catalogId, Uri.parse(listing.imageUri))
-                .onSuccess { httpsUrl ->
-                    listingDao.update(
-                        listing.copy(imageUri = httpsUrl, updatedAt = System.currentTimeMillis()),
-                    )
-                    listingRemote.syncListing(listing.copy(imageUri = httpsUrl))
-                    migrated++
-                }
-        }
-        listingRemote.migratePendingImages(sellerId)
-    }
 }
 
 private suspend fun nextListingCatalogId(listingDao: ListingDao): Int {
