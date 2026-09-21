@@ -1,10 +1,13 @@
 package com.zoti321.c2cmarket.data.local.entity
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
 
-@Entity(tableName = "favorites")
+@Entity(
+    tableName = "favorites",
+    primaryKeys = ["userId", "productId"],
+)
 data class FavoriteEntity(
-    @PrimaryKey val productId: Int,
+    val userId: String,
+    val productId: Int,
     val createdAt: Long,
 )

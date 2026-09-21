@@ -1,6 +1,6 @@
 # C2C Market（原生 Android 学习项目）
 
-> **路线图**：[C2C Market v3 — 路线图 (#29)](https://github.com/Zoti321/c2c-market/issues/29) · v2 已交付 ([#19](https://github.com/Zoti321/c2c-market/issues/19) · PR #27)
+> **路线图**：[C2C Market v4 — 路线图 (#41)](https://github.com/Zoti321/c2c-market/issues/41) · v3 已交付 ([#29](https://github.com/Zoti321/c2c-market/issues/29) · PR #40)
 
 通过开发一个买家闭环的 C2C 市场应用，系统学习原生 Android 开发。项目基于 **Kotlin + Jetpack Compose + Material 3 + Hilt**，逐步引入网络请求、Paging、Room 本地存储与 MVVM 架构分层。
 
@@ -47,15 +47,28 @@
 - [x] v2.5 测试（[约定 v2.5 测试范围与策略规格](https://github.com/Zoti321/c2c-market/issues/25)）
 - [x] v2.6 Release + R8（[约定 v2.6 Release、R8 与 CI 规格](https://github.com/Zoti321/c2c-market/issues/26)）
 
-### v3（当前阶段）
+### v3（已交付）
 
-**路线图**（[#29](https://github.com/Zoti321/c2c-market/issues/29)）**决策路线已完成**（#30–#34）；在 `feature/v3` 上按 canonical spec `/implement`，完成后单 PR 合入 `main`（`3.0.0`）。
+**路线图**（[#29](https://github.com/Zoti321/c2c-market/issues/29)）**已合入 `main`**（`3.0.0`，PR #40）。
 
 - [x] v3.1 私信 / 聊天（[约定 v3.1 私信与聊天规格](https://github.com/Zoti321/c2c-market/issues/30)）
 - [x] v3.2 Google Sign-In（[约定 v3.2 Google Sign-In 与账号规格](https://github.com/Zoti321/c2c-market/issues/31)）
 - [x] v3.3 Deep Link / 地图（[约定 v3.3 Deep Link 与地图规格](https://github.com/Zoti321/c2c-market/issues/32)）
 - [x] v3.4 测试（[约定 v3.4 测试范围与策略规格](https://github.com/Zoti321/c2c-market/issues/33)）
 - [x] v3.5 Release + R8（[约定 v3.5 Release、R8 与 CI 规格](https://github.com/Zoti321/c2c-market/issues/34)）
+
+### v4（当前阶段）
+
+**路线图**（[#41](https://github.com/Zoti321/c2c-market/issues/41)）**v4 已交付**（`4.0.0`，`feature/v4` → 单 PR 合入 `main`）。Release 验收见 [`docs/release-smoke-v4.md`](docs/release-smoke-v4.md)。
+
+- [x] v4.1 卖家私信收件箱 + 双向聊天（[约定 v4.1 规格](https://github.com/Zoti321/c2c-market/issues/42)）
+- [x] v4.2 挂牌状态机 + 卖家订单视图（[约定 v4.2 规格](https://github.com/Zoti321/c2c-market/issues/43)）
+- [x] v4.3 订单生命周期 + 面交确认流（[约定 v4.3 规格](https://github.com/Zoti321/c2c-market/issues/44)）
+- [x] v4.4 收藏列表 + Cart/Favorites 用户隔离（[约定 v4.4 规格](https://github.com/Zoti321/c2c-market/issues/45)）
+- [x] v4.5 测试（[约定 v4.5 测试范围与策略规格](https://github.com/Zoti321/c2c-market/issues/46)）
+- [x] v4.6 Release + R8（[约定 v4.6 Release、R8 与 CI 规格](https://github.com/Zoti321/c2c-market/issues/47)）
+
+**v5+ 后端（调研中，v4 不引入）**：[`docs/research/baas-backend-options.md`](docs/research/baas-backend-options.md) · [ADR-0010](docs/adr/0010-defer-baas-backend-to-v5-plus.md)
 
 领域术语见 [`CONTEXT.md`](CONTEXT.md)；架构决策见 [`docs/adr/`](docs/adr/)。
 
@@ -115,21 +128,20 @@ Base URL: `https://fakestoreapi.com/`
 - Android SDK 37
 - 模拟器或真机（需联网）
 
-## 开发流程
+## 本地开发与验证
 
-采用 **Feature Branch → PR → CI Green → Merge to main** 工作流：在功能分支开发，经 Pull Request 合入 `main`，CI 全部通过后方可合并。
-
-**当前 v3 开发分支**：`feature/v3`（文档与代码均提交到此分支，v3 全部完成后再开 PR 合入 `main`）。详见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
-
-## 快速开始
+> Gradle Daemon 请使用 **JDK 17**（与 CI 一致；见 `.java-version`）。在 JDK 21+ 上 Detekt 可能无法运行。
 
 ```bash
-# 在项目根目录执行
 ./gradlew assembleDebug
-
-# 安装到已连接设备
 ./gradlew installDebug
+./gradlew test                              # JVM 单测 + Compose UI 冒烟（Robolectric）
+./gradlew lintDebug detekt                  # 静态分析（与 CI 一致）
+./gradlew jacocoDebugUnitTestReport jacocoDebugUnitTestCoverageVerification
+./gradlew assembleRelease                   # Release + R8（需 keystore.properties）
 ```
+
+Release 本地配置（均 gitignore，见 [`keystore.properties.example`](keystore.properties.example)、[`local.properties.example`](local.properties.example)）。
 
 > FakeStore **无需 API Key**，确保设备可访问互联网即可。
 

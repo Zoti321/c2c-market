@@ -6,10 +6,12 @@ import com.zoti321.c2cmarket.data.local.C2CDatabase
 import com.zoti321.c2cmarket.data.local.dao.CartDao
 import com.zoti321.c2cmarket.data.local.dao.FavoriteDao
 import com.zoti321.c2cmarket.data.local.dao.ListingDao
+import com.zoti321.c2cmarket.data.local.dao.OrderDao
 import com.zoti321.c2cmarket.data.mapper.toEntity
 import com.zoti321.c2cmarket.data.mapper.toProduct
 import com.zoti321.c2cmarket.domain.error.ProductNotFoundException
 import com.zoti321.c2cmarket.domain.model.ListingInput
+import com.zoti321.c2cmarket.domain.model.ListingStatus
 import com.zoti321.c2cmarket.domain.model.Product
 import com.zoti321.c2cmarket.domain.repository.AuthRepository
 import com.zoti321.c2cmarket.domain.repository.ListingRepository
@@ -21,19 +23,21 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 
 @Singleton
+@Suppress("TooManyFunctions")
 class ListingRepositoryImpl @Inject constructor(
     private val database: C2CDatabase,
     private val listingDao: ListingDao,
     private val cartDao: CartDao,
     private val favoriteDao: FavoriteDao,
+    private val orderDao: OrderDao,
     private val authRepository: AuthRepository,
 ) : ListingRepository {
 
     override fun observeAsProducts(): Flow<List<Product>> =
-        listingDao.observeAll().map { listings -> listings.map { it.toProduct() } }
+        listingDao.observeAvailable().map { listings -> listings.map { it.toProduct() } }
 
     override fun observeByCategory(category: String): Flow<List<Product>> =
-        listingDao.observeByCategory(category).map { listings -> listings.map { it.toProduct() } }
+        listingDao.observeAvailableByCategory(category).map { listings -> listings.map { it.toProduct() } }
 
     override fun observeMyListings(): Flow<List<Product>> =
         authRepository.currentUserId().flatMapLatest { sellerId ->
@@ -80,21 +84,57 @@ class ListingRepositoryImpl @Inject constructor(
     }
 
     override suspend fun delete(catalogId: Int): Result<Unit> = runCatching {
+        val existing = listingDao.getByCatalogId(catalogId)
+            ?: throw ProductNotFoundException(catalogId)
+        if (existing.status == ListingStatus.RESERVED.name) {
+            throw InvalidListingException("挂牌已有订单，请先取消订单")
+        }
         database.withTransaction {
             listingDao.deleteByCatalogId(catalogId)
-            cartDao.deleteByProductId(catalogId)
-            favoriteDao.deleteByProductId(catalogId)
+            cartDao.deleteByProductIdAllUsers(catalogId)
+            favoriteDao.deleteByProductIdAllUsers(catalogId)
+        }
+    }
+
+    override suspend fun updateStatus(catalogId: Int, status: ListingStatus): Result<Unit> = runCatching {
+        val existing = listingDao.getByCatalogId(catalogId)
+            ?: throw ProductNotFoundException(catalogId)
+        val sellerId = authRepository.currentUserId().first()
+        require(existing.sellerId == sellerId) { "Not listing owner" }
+        listingDao.updateStatus(catalogId, status.name, System.currentTimeMillis())
+    }
+
+    override suspend fun markReservedForCheckout(catalogIds: List<Int>) {
+        if (catalogIds.isEmpty()) return
+        listingDao.markReserved(catalogIds, System.currentTimeMillis())
+    }
+
+    override suspend fun markSoldForOrder(orderId: Long) {
+        val catalogIds = orderDao.getLocalLineItemProductIds(orderId)
+        val now = System.currentTimeMillis()
+        catalogIds.forEach { catalogId ->
+            listingDao.updateStatus(catalogId, ListingStatus.SOLD.name, now)
+        }
+    }
+
+    override suspend fun markAvailableForOrder(orderId: Long) {
+        val catalogIds = orderDao.getLocalLineItemProductIds(orderId)
+        val now = System.currentTimeMillis()
+        catalogIds.forEach { catalogId ->
+            val listing = listingDao.getByCatalogId(catalogId) ?: return@forEach
+            if (listing.status == ListingStatus.RESERVED.name) {
+                listingDao.updateStatus(catalogId, ListingStatus.AVAILABLE.name, now)
+            }
         }
     }
 
     override suspend fun searchLocal(query: String): List<Product> {
         val normalized = query.trim().lowercase()
         if (normalized.isEmpty()) return emptyList()
-        return listingDao.observeAll().first()
+        return listingDao.observeAvailable().first()
             .map { it.toProduct() }
             .filter { it.title.lowercase().contains(normalized) }
     }
-
 }
 
 private suspend fun nextListingCatalogId(listingDao: ListingDao): Int {

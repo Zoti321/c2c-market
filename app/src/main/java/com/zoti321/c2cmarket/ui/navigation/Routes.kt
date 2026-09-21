@@ -9,6 +9,7 @@ object Routes {
     const val PROFILE = "profile"
 
     const val SEARCH = "search"
+    const val FAVORITES = "favorites"
 
     const val PRODUCT = "product/{id}"
     const val PRODUCT_ID_ARG = "id"
@@ -31,7 +32,10 @@ object Routes {
     const val ADDRESS_ID_ARG = "addressId"
     fun editAddress(addressId: Long) = "addresses/edit/$addressId"
 
-    const val CONVERSATIONS = "conversations"
+    const val CONVERSATIONS = "conversations/{role}"
+    const val CONVERSATION_ROLE_ARG = "role"
+    const val CONVERSATIONS_BUYER = "conversations/buyer"
+    const val CONVERSATIONS_SELLER = "conversations/seller"
     const val CHAT = "chat/{conversationId}"
     const val CONVERSATION_ID_ARG = "conversationId"
     fun chat(conversationId: Long) = "chat/$conversationId"

@@ -8,8 +8,12 @@ data class Conversation(
     val sellerId: String,
     val sellerDisplayName: String,
     val buyerId: String,
+    val buyerDisplayName: String,
     val lastMessagePreview: String,
     val lastMessageAt: Long,
+    /** 买家视角未读数 */
     val unreadCount: Int,
+    /** 卖家视角未读数 */
+    val sellerUnreadCount: Int,
     val createdAt: Long,
 )

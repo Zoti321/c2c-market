@@ -63,6 +63,16 @@
     <string name="order_number">订单号 %1$s</string>
     <string name="order_item_count">共 %1$d 件</string>
     <string name="order_status_completed">已完成</string>
+    <string name="order_status_pending">待确认</string>
+    <string name="order_status_confirmed">待面交</string>
+    <string name="order_status_cancelled">已取消</string>
+    <string name="listing_status_available">在售</string>
+    <string name="listing_status_reserved">已下单</string>
+    <string name="listing_status_sold">已成交</string>
+    <string name="listing_status_removed">已下架</string>
+    <string name="listing_mark_sold">标记已售</string>
+    <string name="listing_mark_removed">下架</string>
+    <string name="order_seller_empty">暂无卖出订单</string>
     <string name="order_total">合计：$%1$.2f</string>
 
     <!-- Profile -->
@@ -129,15 +139,37 @@
     <string name="notification_channel_orders">订单通知</string>
     <string name="notification_order_shipped_title">Mock 配送提醒</string>
     <string name="notification_order_shipped_body">订单 %1$s 已模拟进入配送</string>
+    <string name="notification_order_pending_seller_title">新卖出订单</string>
+    <string name="notification_order_pending_seller_body">订单 %1$s 待你确认</string>
+    <string name="notification_order_confirmed_buyer_title">卖家已确认订单</string>
+    <string name="notification_order_confirmed_buyer_body">订单 %1$s 已确认，请安排面交</string>
+    <string name="notification_order_completed_title">面交已完成</string>
+    <string name="notification_order_completed_body">订单 %1$s 已完成</string>
+    <string name="order_meetup_title">面交地点</string>
+    <string name="order_timeline_pending">1. 待卖家确认</string>
+    <string name="order_timeline_confirmed">2. 待面交</string>
+    <string name="order_timeline_completed">3. 已完成</string>
+    <string name="order_action_confirm">确认订单</string>
+    <string name="order_action_cancel">取消订单</string>
+    <string name="order_action_confirm_meetup">确认面交完成</string>
     <string name="permission_notifications_rationale">允许通知以接收 Mock 配送提醒</string>
 
     <!-- Chat -->
     <string name="contact_seller">联系卖家</string>
+    <string name="profile_favorites">我的收藏</string>
+    <string name="favorites_title">我的收藏</string>
+    <string name="favorites_empty">暂无收藏</string>
+    <string name="favorites_empty_hint">在商品详情点击收藏按钮添加</string>
+    <string name="profile_seller_orders_section">卖出订单</string>
     <string name="profile_messages">我的消息</string>
+    <string name="profile_seller_messages">收到的消息</string>
     <string name="chat_title">聊天</string>
     <string name="chat_conversations_title">我的消息</string>
     <string name="chat_conversations_empty">暂无消息</string>
     <string name="chat_conversations_empty_hint">在商品详情点击「联系卖家」开始对话</string>
+    <string name="chat_seller_conversations_title">收到的消息</string>
+    <string name="chat_seller_conversations_empty">暂无买家咨询</string>
+    <string name="chat_seller_conversations_empty_hint">买家在商品详情联系你后会显示在这里</string>
     <string name="chat_input_hint">输入消息…</string>
     <string name="chat_send">发送</string>
     <string name="chat_send_failed">发送失败，请重试</string>

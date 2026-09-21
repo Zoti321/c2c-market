@@ -12,8 +12,11 @@ import com.zoti321.c2cmarket.domain.model.OrderStatus
 import com.zoti321.c2cmarket.domain.model.OrderSummary
 import com.zoti321.c2cmarket.domain.model.ShippingInfo
 import com.zoti321.c2cmarket.domain.model.displayOrderNumber
+import com.zoti321.c2cmarket.domain.model.isMeetupOrder
 import com.zoti321.c2cmarket.domain.repository.AuthRepository
+import com.zoti321.c2cmarket.domain.repository.ListingRepository
 import com.zoti321.c2cmarket.domain.repository.OrderRepository
+import com.zoti321.c2cmarket.domain.scheduler.OrderNotificationKind
 import com.zoti321.c2cmarket.domain.scheduler.OrderNotificationScheduler
 import com.zoti321.c2cmarket.notification.NotificationHelper
 import javax.inject.Inject
@@ -28,26 +31,38 @@ class OrderRepositoryImpl @Inject constructor(
     private val orderDao: OrderDao,
     private val cartDao: CartDao,
     private val authRepository: AuthRepository,
+    private val listingRepository: ListingRepository,
     private val notificationHelper: NotificationHelper,
     private val orderNotificationScheduler: OrderNotificationScheduler,
 ) : OrderRepository {
 
     override suspend fun placeOrder(shipping: ShippingInfo): Result<Order> = runCatching {
-        val cartItems = cartDao.observeAll().first()
+        val userId = authRepository.currentUserId().first()
+        val cartItems = cartDao.observeAll(userId).first()
         if (cartItems.isEmpty()) throw EmptyCartException()
 
         val total = cartItems.sumOf { it.unitPrice * it.quantity }
         val now = System.currentTimeMillis()
-        val userId = authRepository.currentUserId().first()
+        val localCatalogIds = cartItems.map { it.productId }.filter { it < 0 }.distinct()
+        val isMeetupOrder = localCatalogIds.isNotEmpty()
+        val meetupLocation = if (isMeetupOrder) {
+            localCatalogIds.firstNotNullOfOrNull { catalogId ->
+                listingRepository.getProductByCatalogId(catalogId).getOrNull()
+                    ?.meetupLocation?.takeIf { it.isNotBlank() }
+            }
+        } else {
+            null
+        }
 
         val orderEntity = OrderEntity(
             guestId = userId,
             totalAmount = total,
-            status = OrderStatus.COMPLETED.name,
+            status = if (isMeetupOrder) OrderStatus.PENDING.name else OrderStatus.COMPLETED.name,
             createdAt = now,
             shippingReceiverName = shipping.receiverName,
             shippingPhone = shipping.phone,
             shippingAddress = shipping.address,
+            meetupLocation = meetupLocation,
         )
 
         val lineEntities = cartItems.map { cart ->
@@ -61,12 +76,21 @@ class OrderRepositoryImpl @Inject constructor(
             )
         }
 
-        val orderId = orderDao.placeOrderWithClearCart(orderEntity, lineEntities)
+        val orderId = orderDao.placeOrderWithClearCart(orderEntity, lineEntities, userId)
+        listingRepository.markReservedForCheckout(localCatalogIds)
         val lineItems = lineEntities.map { it.copy(orderId = orderId) }
         val order = orderEntity.copy(id = orderId).toDomain(lineItems)
 
         if (notificationHelper.hasNotificationPermission()) {
-            orderNotificationScheduler.schedule(orderId, order.displayOrderNumber())
+            if (isMeetupOrder) {
+                orderNotificationScheduler.schedule(
+                    orderId,
+                    order.displayOrderNumber(),
+                    OrderNotificationKind.PENDING_SELLER,
+                )
+            } else {
+                orderNotificationScheduler.schedule(orderId, order.displayOrderNumber())
+            }
         }
 
         order
@@ -87,6 +111,21 @@ class OrderRepositoryImpl @Inject constructor(
             }
         }
 
+    override fun observeOrdersAsSeller(): Flow<List<OrderSummary>> =
+        authRepository.currentUserId().flatMapLatest { sellerId ->
+            combine(
+                orderDao.observeOrdersAsSeller(sellerId),
+                orderDao.observeAllLineItems(),
+            ) { orders, allLineItems ->
+                orders.map { order ->
+                    val itemCount = allLineItems
+                        .filter { it.orderId == order.id }
+                        .sumOf { it.quantity }
+                    order.toSummary(itemCount)
+                }
+            }
+        }
+
     override fun observeOrder(orderId: Long): Flow<Order?> =
         authRepository.currentUserId().flatMapLatest { userId ->
             combine(
@@ -95,9 +134,122 @@ class OrderRepositoryImpl @Inject constructor(
             ) { order, lineItems ->
                 when {
                     order == null -> null
-                    order.guestId != userId -> null
-                    else -> order.toDomain(lineItems)
+                    order.guestId == userId -> order.toDomain(lineItems)
+                    isSellerOrder(orderDao, listingRepository, orderId, userId) ->
+                        order.toDomain(lineItems)
+                    else -> null
                 }
             }
         }
+
+    override suspend fun isSellerForOrder(orderId: Long): Boolean {
+        val userId = authRepository.currentUserId().first()
+        return isSellerOrder(orderDao, listingRepository, orderId, userId)
+    }
+
+    override suspend fun confirmOrderAsSeller(orderId: Long): Result<Unit> = runCatching {
+        requireSeller(orderDao, listingRepository, authRepository, orderId)
+        val order = loadOrder(orderDao, orderId)
+        require(order.isMeetupOrder()) { "Not a meetup order" }
+        require(order.status == OrderStatus.PENDING) { "Invalid status" }
+        orderDao.updateStatus(orderId, OrderStatus.CONFIRMED.name)
+        if (notificationHelper.hasNotificationPermission()) {
+            orderNotificationScheduler.schedule(
+                orderId,
+                order.displayOrderNumber(),
+                OrderNotificationKind.CONFIRMED_BUYER,
+            )
+        }
+    }
+
+    override suspend fun confirmMeetupAsBuyer(orderId: Long): Result<Unit> = runCatching {
+        val userId = authRepository.currentUserId().first()
+        val order = loadOrder(orderDao, orderId)
+        require(order.guestId == userId) { "Not buyer" }
+        require(order.isMeetupOrder()) { "Not a meetup order" }
+        require(order.status == OrderStatus.CONFIRMED) { "Invalid status" }
+        orderDao.setBuyerMeetupConfirmed(orderId)
+        tryCompleteMeetup(
+            orderDao = orderDao,
+            listingRepository = listingRepository,
+            notificationHelper = notificationHelper,
+            orderNotificationScheduler = orderNotificationScheduler,
+            orderId = orderId,
+        )
+    }
+
+    override suspend fun confirmMeetupAsSeller(orderId: Long): Result<Unit> = runCatching {
+        requireSeller(orderDao, listingRepository, authRepository, orderId)
+        val order = loadOrder(orderDao, orderId)
+        require(order.isMeetupOrder()) { "Not a meetup order" }
+        require(order.status == OrderStatus.CONFIRMED) { "Invalid status" }
+        orderDao.setSellerMeetupConfirmed(orderId)
+        tryCompleteMeetup(
+            orderDao = orderDao,
+            listingRepository = listingRepository,
+            notificationHelper = notificationHelper,
+            orderNotificationScheduler = orderNotificationScheduler,
+            orderId = orderId,
+        )
+    }
+
+    override suspend fun cancelOrderAsSeller(orderId: Long): Result<Unit> = runCatching {
+        requireSeller(orderDao, listingRepository, authRepository, orderId)
+        val order = loadOrder(orderDao, orderId)
+        require(order.isMeetupOrder()) { "Not a meetup order" }
+        require(order.status == OrderStatus.PENDING || order.status == OrderStatus.CONFIRMED) {
+            "Invalid status"
+        }
+        orderDao.updateStatus(orderId, OrderStatus.CANCELLED.name)
+        listingRepository.markAvailableForOrder(orderId)
+    }
+}
+
+private suspend fun tryCompleteMeetup(
+    orderDao: OrderDao,
+    listingRepository: ListingRepository,
+    notificationHelper: NotificationHelper,
+    orderNotificationScheduler: OrderNotificationScheduler,
+    orderId: Long,
+) {
+    val order = loadOrder(orderDao, orderId)
+    val updated = orderDao.getById(orderId) ?: return
+    if (!updated.buyerMeetupConfirmed || !updated.sellerMeetupConfirmed) return
+    orderDao.updateStatus(orderId, OrderStatus.COMPLETED.name)
+    listingRepository.markSoldForOrder(orderId)
+    if (notificationHelper.hasNotificationPermission()) {
+        orderNotificationScheduler.schedule(
+            orderId,
+            order.displayOrderNumber(),
+            OrderNotificationKind.COMPLETED,
+        )
+    }
+}
+
+private suspend fun loadOrder(orderDao: OrderDao, orderId: Long): Order {
+    val entity = orderDao.getById(orderId) ?: error("Order not found")
+    val lineItems = orderDao.observeLineItems(orderId).first()
+    return entity.toDomain(lineItems)
+}
+
+private suspend fun requireSeller(
+    orderDao: OrderDao,
+    listingRepository: ListingRepository,
+    authRepository: AuthRepository,
+    orderId: Long,
+) {
+    val userId = authRepository.currentUserId().first()
+    require(isSellerOrder(orderDao, listingRepository, orderId, userId)) { "Not seller" }
+}
+
+private suspend fun isSellerOrder(
+    orderDao: OrderDao,
+    listingRepository: ListingRepository,
+    orderId: Long,
+    userId: String,
+): Boolean {
+    val localProductIds = orderDao.getLocalLineItemProductIds(orderId)
+    return localProductIds.any { catalogId ->
+        listingRepository.getSellerId(catalogId) == userId
+    }
 }

@@ -14,7 +14,8 @@ fun CartItemEntity.toDomain(): CartItem = CartItem(
     addedAt = Instant.ofEpochMilli(addedAt),
 )
 
-fun Product.toCartItemEntity(quantity: Int, addedAt: Long): CartItemEntity = CartItemEntity(
+fun Product.toCartItemEntity(userId: String, quantity: Int, addedAt: Long): CartItemEntity = CartItemEntity(
+    userId = userId,
     productId = id,
     title = title,
     unitPrice = price,

@@ -120,6 +120,73 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
     }
 }
 
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "ALTER TABLE conversations ADD COLUMN buyerDisplayName TEXT NOT NULL DEFAULT '游客'",
+        )
+        db.execSQL(
+            "ALTER TABLE conversations ADD COLUMN sellerUnreadCount INTEGER NOT NULL DEFAULT 0",
+        )
+        db.execSQL(
+            "ALTER TABLE listings ADD COLUMN status TEXT NOT NULL DEFAULT 'AVAILABLE'",
+        )
+        db.execSQL("ALTER TABLE orders ADD COLUMN meetupLocation TEXT")
+        db.execSQL(
+            "ALTER TABLE orders ADD COLUMN buyerMeetupConfirmed INTEGER NOT NULL DEFAULT 0",
+        )
+        db.execSQL(
+            "ALTER TABLE orders ADD COLUMN sellerMeetupConfirmed INTEGER NOT NULL DEFAULT 0",
+        )
+    }
+}
+
+val MIGRATION_9_10 = object : Migration(9, 10) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS cart_items_new (
+                userId TEXT NOT NULL,
+                productId INTEGER NOT NULL,
+                title TEXT NOT NULL,
+                unitPrice REAL NOT NULL,
+                imageUrl TEXT NOT NULL,
+                quantity INTEGER NOT NULL,
+                addedAt INTEGER NOT NULL,
+                PRIMARY KEY(userId, productId)
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            """
+            INSERT INTO cart_items_new (userId, productId, title, unitPrice, imageUrl, quantity, addedAt)
+            SELECT 'guest', productId, title, unitPrice, imageUrl, quantity, addedAt FROM cart_items
+            """.trimIndent(),
+        )
+        db.execSQL("DROP TABLE cart_items")
+        db.execSQL("ALTER TABLE cart_items_new RENAME TO cart_items")
+
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS favorites_new (
+                userId TEXT NOT NULL,
+                productId INTEGER NOT NULL,
+                createdAt INTEGER NOT NULL,
+                PRIMARY KEY(userId, productId)
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            """
+            INSERT INTO favorites_new (userId, productId, createdAt)
+            SELECT 'guest', productId, createdAt FROM favorites
+            """.trimIndent(),
+        )
+        db.execSQL("DROP TABLE favorites")
+        db.execSQL("ALTER TABLE favorites_new RENAME TO favorites")
+    }
+}
+
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL(

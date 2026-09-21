@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zoti321.c2cmarket.domain.model.AuthState
 import com.zoti321.c2cmarket.domain.model.BrowseHistoryItem
+import com.zoti321.c2cmarket.domain.model.ListingStatus
 import com.zoti321.c2cmarket.domain.model.OrderSummary
 import com.zoti321.c2cmarket.domain.model.Product
 import com.zoti321.c2cmarket.domain.repository.AuthRepository
@@ -27,6 +28,7 @@ import kotlinx.coroutines.launch
 
 data class ProfileUiData(
     val orders: List<OrderSummary>,
+    val sellerOrders: List<OrderSummary>,
     val browseHistory: List<BrowseHistoryItem>,
     val myListings: List<Product>,
 )
@@ -54,12 +56,14 @@ class ProfileViewModel @Inject constructor(
         .flatMapLatest {
             combine(
                 orderRepository.observeOrders(),
+                orderRepository.observeOrdersAsSeller(),
                 browseHistoryRepository.observeRecent(),
                 listingRepository.observeMyListings(),
-            ) { orders, history, listings ->
+            ) { orders, sellerOrders, history, listings ->
                 UiState.Success(
                     ProfileUiData(
                         orders = orders,
+                        sellerOrders = sellerOrders,
                         browseHistory = history,
                         myListings = listings,
                     ),
@@ -81,6 +85,12 @@ class ProfileViewModel @Inject constructor(
     fun deleteListing(catalogId: Int) {
         viewModelScope.launch {
             listingRepository.delete(catalogId)
+        }
+    }
+
+    fun updateListingStatus(catalogId: Int, status: ListingStatus) {
+        viewModelScope.launch {
+            listingRepository.updateStatus(catalogId, status)
         }
     }
 

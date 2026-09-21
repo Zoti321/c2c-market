@@ -2,6 +2,7 @@ package com.zoti321.c2cmarket.ui.chat
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import com.zoti321.c2cmarket.data.repository.FakeAuthRepository
 import com.zoti321.c2cmarket.data.repository.FakeChatRepository
 import com.zoti321.c2cmarket.domain.GuestSession
 import com.zoti321.c2cmarket.domain.model.Conversation
@@ -53,8 +54,9 @@ class ChatViewModelTest {
         assertTrue(state is ChatUiState.Ready)
         state as ChatUiState.Ready
         assertEquals("Test Product", state.productTitle)
-        assertEquals("卖家", state.sellerDisplayName)
+        assertEquals("卖家", state.subtitle)
         assertEquals(1, state.messages.size)
+        assertEquals(GuestSession.GUEST_ID, state.currentUserId)
     }
 
     @Test
@@ -101,7 +103,7 @@ class ChatViewModelTest {
 
     private fun createViewModel(repository: FakeChatRepository): ChatViewModel {
         val savedStateHandle = SavedStateHandle(mapOf(Routes.CONVERSATION_ID_ARG to conversationId))
-        return ChatViewModel(savedStateHandle, repository)
+        return ChatViewModel(savedStateHandle, repository, FakeAuthRepository())
     }
 
     private fun sampleConversation() = Conversation(
@@ -112,9 +114,11 @@ class ChatViewModelTest {
         sellerId = "seller-1",
         sellerDisplayName = "卖家",
         buyerId = GuestSession.GUEST_ID,
+        buyerDisplayName = "游客",
         lastMessagePreview = "",
         lastMessageAt = 100L,
         unreadCount = 0,
+        sellerUnreadCount = 0,
         createdAt = 100L,
     )
 

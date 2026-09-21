@@ -10,4 +10,4 @@ Single-context layout: root `CONTEXT.md` + `docs/adr/`. See `docs/agents/domain.
 
 ### Git workflow
 
-Feature Branch → PR → CI Green → Merge to `main`. Code changes go through PR; do not push directly to `main`. v3 work (docs + code) goes on `feature/v3`; open one PR when v3 is complete. See `CONTRIBUTING.md` and roadmap [#29](https://github.com/Zoti321/c2c-market/issues/29).
+个人练习 / 单人维护；v4 在 `feature/v4` 开发，合入 `main` 前 CI Green。本地 Gradle 命令见 `README.md`。路线图 [#41](https://github.com/Zoti321/c2c-market/issues/41)（v3 已交付 [#29](https://github.com/Zoti321/c2c-market/issues/29)）。

@@ -47,5 +47,8 @@ fun OrderEntity.toDomain(lineItems: List<OrderLineItemEntity>): Order {
         status = OrderStatus.valueOf(status),
         createdAt = Instant.ofEpochMilli(createdAt),
         shipping = shipping,
+        meetupLocation = meetupLocation,
+        buyerMeetupConfirmed = buyerMeetupConfirmed,
+        sellerMeetupConfirmed = sellerMeetupConfirmed,
     )
 }

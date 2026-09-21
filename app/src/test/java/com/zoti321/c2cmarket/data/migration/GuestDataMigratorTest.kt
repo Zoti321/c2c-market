@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -31,6 +32,8 @@ class GuestDataMigratorTest {
             orderDao = database.orderDao(),
             listingDao = database.listingDao(),
             conversationDao = database.conversationDao(),
+            cartDao = database.cartDao(),
+            favoriteDao = database.favoriteDao(),
         )
     }
 
@@ -86,8 +89,37 @@ class GuestDataMigratorTest {
         val listing = database.listingDao().observeAll().first().first()
         assertEquals(googleUserId, listing.sellerId)
 
-        val conversation = database.conversationDao().observeAll(googleUserId).first().first()
+        val conversation = database.conversationDao().observeByBuyerId(googleUserId).first().first()
         assertEquals(googleUserId, conversation.buyerId)
+    }
+
+    @Test
+    fun migrateGuestDataTo_migratesCartAndFavorites() = runTest {
+        val googleUserId = UserIds.google("sub-cart")
+        database.cartDao().insert(
+            com.zoti321.c2cmarket.data.local.entity.CartItemEntity(
+                userId = UserIds.GUEST,
+                productId = 1,
+                title = "Phone",
+                unitPrice = 9.9,
+                imageUrl = "img",
+                quantity = 1,
+                addedAt = 1L,
+            ),
+        )
+        database.favoriteDao().insert(
+            com.zoti321.c2cmarket.data.local.entity.FavoriteEntity(
+                userId = UserIds.GUEST,
+                productId = 2,
+                createdAt = 1L,
+            ),
+        )
+
+        migrator.migrateGuestDataTo(googleUserId)
+
+        assertTrue(database.cartDao().observeAll(googleUserId).first().isNotEmpty())
+        assertTrue(database.favoriteDao().observeAll(googleUserId).first().isNotEmpty())
+        assertTrue(database.cartDao().observeAll(UserIds.GUEST).first().isEmpty())
     }
 
     @Test

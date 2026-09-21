@@ -6,5 +6,7 @@ data class ProfileScreenCallbacks(
     val onCreateListing: () -> Unit,
     val onEditListing: (Int) -> Unit,
     val onManageAddresses: () -> Unit,
-    val onMessagesClick: () -> Unit,
+    val onBuyerMessagesClick: () -> Unit,
+    val onSellerMessagesClick: () -> Unit,
+    val onFavoritesClick: () -> Unit,
 )

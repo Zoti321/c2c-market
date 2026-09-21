@@ -33,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.zoti321.c2cmarket.R
 import com.zoti321.c2cmarket.domain.model.Conversation
+import com.zoti321.c2cmarket.domain.model.ConversationRole
 import com.zoti321.c2cmarket.ui.common.EmptyContent
 import com.zoti321.c2cmarket.ui.common.ErrorContent
 import com.zoti321.c2cmarket.ui.common.LoadingContent
@@ -50,12 +51,26 @@ fun ConversationListScreen(
     viewModel: ConversationListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val role = viewModel.role
+
+    val titleRes = when (role) {
+        ConversationRole.BUYER -> R.string.chat_conversations_title
+        ConversationRole.SELLER -> R.string.chat_seller_conversations_title
+    }
+    val emptyMessageRes = when (role) {
+        ConversationRole.BUYER -> R.string.chat_conversations_empty
+        ConversationRole.SELLER -> R.string.chat_seller_conversations_empty
+    }
+    val emptyHintRes = when (role) {
+        ConversationRole.BUYER -> R.string.chat_conversations_empty_hint
+        ConversationRole.SELLER -> R.string.chat_seller_conversations_empty_hint
+    }
 
     Scaffold(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.chat_conversations_title)) },
+                title = { Text(stringResource(titleRes)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -78,8 +93,8 @@ fun ConversationListScreen(
                 if (state.data.isEmpty()) {
                     EmptyContent(
                         icon = Icons.Outlined.Chat,
-                        message = stringResource(R.string.chat_conversations_empty),
-                        actionLabel = stringResource(R.string.chat_conversations_empty_hint),
+                        message = stringResource(emptyMessageRes),
+                        actionLabel = stringResource(emptyHintRes),
                         onAction = onBack,
                         modifier = Modifier.padding(innerPadding),
                     )
@@ -92,6 +107,7 @@ fun ConversationListScreen(
                         items(state.data, key = { it.id }) { conversation ->
                             ConversationRow(
                                 conversation = conversation,
+                                role = role,
                                 onClick = { onConversationClick(conversation.id) },
                             )
                         }
@@ -105,8 +121,18 @@ fun ConversationListScreen(
 @Composable
 private fun ConversationRow(
     conversation: Conversation,
+    role: ConversationRole,
     onClick: () -> Unit,
 ) {
+    val peerName = when (role) {
+        ConversationRole.BUYER -> conversation.sellerDisplayName
+        ConversationRole.SELLER -> conversation.buyerDisplayName
+    }
+    val unreadCount = when (role) {
+        ConversationRole.BUYER -> conversation.unreadCount
+        ConversationRole.SELLER -> conversation.sellerUnreadCount
+    }
+
     ListItem(
         modifier = Modifier.clickable(onClick = onClick),
         leadingContent = {
@@ -125,7 +151,7 @@ private fun ConversationRow(
         supportingContent = {
             Text(
                 text = buildString {
-                    append(conversation.sellerDisplayName)
+                    append(peerName)
                     if (conversation.lastMessagePreview.isNotEmpty()) {
                         append(" · ")
                         append(conversation.lastMessagePreview)
@@ -136,8 +162,8 @@ private fun ConversationRow(
             )
         },
         trailingContent = {
-            if (conversation.unreadCount > 0) {
-                BadgedBox(badge = { Badge { Text(conversation.unreadCount.toString()) } }) {
+            if (unreadCount > 0) {
+                BadgedBox(badge = { Badge { Text(unreadCount.toString()) } }) {
                     Text(
                         text = Instant.ofEpochMilli(conversation.lastMessageAt).formatRelativeTime(),
                         style = MaterialTheme.typography.labelSmall,

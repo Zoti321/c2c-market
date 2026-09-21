@@ -4,10 +4,14 @@ import com.zoti321.c2cmarket.data.local.dao.FavoriteDao
 import com.zoti321.c2cmarket.data.local.entity.FavoriteEntity
 import com.zoti321.c2cmarket.domain.model.Product
 import com.zoti321.c2cmarket.domain.model.Rating
+import com.zoti321.c2cmarket.domain.model.UserIds
+import com.zoti321.c2cmarket.domain.repository.ProductRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -31,7 +35,11 @@ class FavoriteRepositoryImplTest {
     @Before
     fun setUp() {
         dao = FakeFavoriteDao()
-        repository = FavoriteRepositoryImpl(dao)
+        repository = FavoriteRepositoryImpl(
+            dao,
+            FakeAuthRepository(),
+            FakeProductRepository(product),
+        )
     }
 
     @Test
@@ -40,7 +48,7 @@ class FavoriteRepositoryImplTest {
 
         assertTrue(result.isSuccess)
         assertTrue(result.getOrThrow())
-        assertTrue(dao.isFavorite(product.id))
+        assertTrue(dao.isFavorite(UserIds.GUEST, product.id))
     }
 
     @Test
@@ -50,23 +58,86 @@ class FavoriteRepositoryImplTest {
 
         assertTrue(result.isSuccess)
         assertFalse(result.getOrThrow())
-        assertFalse(dao.isFavorite(product.id))
+        assertFalse(dao.isFavorite(UserIds.GUEST, product.id))
+    }
+
+    @Test
+    fun observeFavorites_returnsProductsForCurrentUser() = runTest {
+        repository.toggleFavorite(product)
+
+        val favorites = repository.observeFavorites().first()
+
+        assertEquals(1, favorites.size)
+        assertEquals(product.id, favorites.first().id)
+    }
+
+    @Test
+    fun observeFavorites_isolatedAfterSignOut() = runTest {
+        val auth = FakeAuthRepository()
+        repository = FavoriteRepositoryImpl(dao, auth, FakeProductRepository(product))
+        repository.toggleFavorite(product)
+
+        auth.setSignedIn(
+            com.zoti321.c2cmarket.domain.model.UserProfile(
+                userId = UserIds.google("other"),
+                displayName = "Other",
+                email = null,
+                photoUrl = null,
+            ),
+        )
+
+        assertTrue(repository.observeFavorites().first().isEmpty())
     }
 }
 
+private class FakeProductRepository(
+    private val product: Product,
+) : ProductRepository {
+    override fun pagingProducts(pageSize: Int, sort: String): Flow<androidx.paging.PagingData<Product>> =
+        kotlinx.coroutines.flow.flowOf(androidx.paging.PagingData.empty())
+
+    override suspend fun getProduct(id: Int): Result<Product> =
+        if (id == product.id) Result.success(product) else Result.failure(IllegalStateException())
+
+    override suspend fun getCategories(): Result<List<String>> = Result.success(emptyList())
+
+    override suspend fun getProductsByCategory(category: String): Result<List<Product>> = Result.success(emptyList())
+
+    override suspend fun getAllProducts(): Result<List<Product>> = Result.success(listOf(product))
+
+    override fun searchProducts(query: String): Flow<com.zoti321.c2cmarket.domain.model.SearchResult> =
+        kotlinx.coroutines.flow.flowOf(com.zoti321.c2cmarket.domain.model.SearchResult.Idle)
+}
+
 private class FakeFavoriteDao : FavoriteDao {
-    private val favorites = MutableStateFlow<Set<Int>>(emptySet())
+    private val favorites = MutableStateFlow<List<FavoriteEntity>>(emptyList())
 
-    override fun observeIsFavorite(id: Int): Flow<Boolean> =
-        favorites.map { id in it }
+    override fun observeIsFavorite(userId: String, id: Int): Flow<Boolean> =
+        favorites.map { list -> list.any { it.userId == userId && it.productId == id } }
 
-    override suspend fun isFavorite(id: Int): Boolean = id in favorites.value
+    override suspend fun isFavorite(userId: String, id: Int): Boolean =
+        favorites.value.any { it.userId == userId && it.productId == id }
+
+    override fun observeAll(userId: String): Flow<List<FavoriteEntity>> =
+        favorites.map { list -> list.filter { it.userId == userId } }
 
     override suspend fun insert(entity: FavoriteEntity) {
-        favorites.value = favorites.value + entity.productId
+        favorites.value = favorites.value.filterNot {
+            it.userId == entity.userId && it.productId == entity.productId
+        } + entity
     }
 
-    override suspend fun deleteByProductId(id: Int) {
-        favorites.value = favorites.value - id
+    override suspend fun deleteByProductId(userId: String, id: Int) {
+        favorites.value = favorites.value.filterNot { it.userId == userId && it.productId == id }
+    }
+
+    override suspend fun deleteByProductIdAllUsers(id: Int) {
+        favorites.value = favorites.value.filterNot { it.productId == id }
+    }
+
+    override suspend fun migrateGuestFavorites(newUserId: String) {
+        favorites.value = favorites.value.map {
+            if (it.userId == UserIds.GUEST) it.copy(userId = newUserId) else it
+        }
     }
 }

@@ -48,13 +48,38 @@ class ProfileScreenTest {
                     onCreateListing = {},
                     onEditListing = {},
                     onManageAddresses = {},
-                    onMessagesClick = {},
+                    onBuyerMessagesClick = {},
+                    onSellerMessagesClick = {},
+                    onFavoritesClick = {},
                 ),
                 viewModel = ScreenTestViewModels.guestProfile(),
             )
         }
         composeRule.waitForIdle()
         composeRule.onNodeWithText("游客模式").assertExists()
+    }
+
+    @Test
+    fun profileScreen_showsV4Entries() {
+        composeRule.setContent {
+            ProfileScreen(
+                callbacks = ProfileScreenCallbacks(
+                    onOrderClick = {},
+                    onProductClick = {},
+                    onCreateListing = {},
+                    onEditListing = {},
+                    onManageAddresses = {},
+                    onBuyerMessagesClick = {},
+                    onSellerMessagesClick = {},
+                    onFavoritesClick = {},
+                ),
+                viewModel = ScreenTestViewModels.guestProfile(),
+            )
+        }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("我的收藏").assertExists()
+        composeRule.onNodeWithText("我的消息").assertExists()
+        composeRule.onNodeWithText("收到的消息").assertExists()
     }
 
     @Test
@@ -67,7 +92,9 @@ class ProfileScreenTest {
                     onCreateListing = {},
                     onEditListing = {},
                     onManageAddresses = {},
-                    onMessagesClick = {},
+                    onBuyerMessagesClick = {},
+                    onSellerMessagesClick = {},
+                    onFavoritesClick = {},
                 ),
                 viewModel = ScreenTestViewModels.signedInProfile(displayName = "张三"),
             )

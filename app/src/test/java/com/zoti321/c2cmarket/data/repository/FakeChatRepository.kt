@@ -11,25 +11,37 @@ import kotlinx.coroutines.flow.map
 
 class FakeChatRepository(
     conversations: List<Conversation> = emptyList(),
+    sellerConversations: List<Conversation> = emptyList(),
     messages: Map<Long, List<Message>> = emptyMap(),
     drafts: Map<Long, String> = emptyMap(),
     var sendResult: Result<Message>? = null,
 ) : ChatRepository {
 
-    private val conversationsState = MutableStateFlow(conversations)
+    private val buyerConversationsState = MutableStateFlow(conversations)
+    private val sellerConversationsState = MutableStateFlow(sellerConversations)
     private val messagesState = MutableStateFlow(messages)
     private val draftsState = MutableStateFlow(drafts)
 
     val markReadCalls = mutableListOf<Long>()
     val sendCalls = mutableListOf<Pair<Long, String>>()
 
-    override fun observeConversations(): Flow<List<Conversation>> = conversationsState
+    override fun observeConversationsAsBuyer(): Flow<List<Conversation>> = buyerConversationsState
+
+    override fun observeConversationsAsSeller(): Flow<List<Conversation>> = sellerConversationsState
+
+    override fun observeConversationForCurrentUser(conversationId: Long): Flow<Conversation?> =
+        buyerConversationsState.map { conversations ->
+            conversations.find { it.id == conversationId }
+        }
 
     override fun observeMessages(conversationId: Long): Flow<List<Message>> =
         messagesState.map { it[conversationId].orEmpty() }
 
     override suspend fun getOrCreateConversation(product: Product): Result<Conversation> =
         Result.failure(UnsupportedOperationException())
+
+    override suspend fun getConversationForUser(conversationId: Long): Conversation? =
+        buyerConversationsState.value.find { it.id == conversationId }
 
     override suspend fun saveDraft(conversationId: Long, body: String) {
         draftsState.value = draftsState.value + (conversationId to body)
@@ -61,7 +73,7 @@ class FakeChatRepository(
         draftsState.map { it[conversationId].orEmpty() }
 
     fun setConversations(conversations: List<Conversation>) {
-        conversationsState.value = conversations
+        buyerConversationsState.value = conversations
     }
 
     fun setMessages(conversationId: Long, messages: List<Message>) {

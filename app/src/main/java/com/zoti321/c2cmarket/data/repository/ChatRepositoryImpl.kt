@@ -13,6 +13,7 @@ import com.zoti321.c2cmarket.data.mapper.toEntityValue
 import com.zoti321.c2cmarket.di.ApplicationScope
 import com.zoti321.c2cmarket.di.IoDispatcher
 import com.zoti321.c2cmarket.domain.MockSellerResolver
+import com.zoti321.c2cmarket.domain.model.AuthState
 import com.zoti321.c2cmarket.domain.model.Conversation
 import com.zoti321.c2cmarket.domain.model.Message
 import com.zoti321.c2cmarket.domain.model.MessageStatus
@@ -46,10 +47,24 @@ class ChatRepositoryImpl @Inject constructor(
     private val messageDao: MessageDao = database.messageDao()
     private val listingDao: ListingDao = database.listingDao()
 
-    override fun observeConversations(): Flow<List<Conversation>> =
+    override fun observeConversationsAsBuyer(): Flow<List<Conversation>> =
         authRepository.currentUserId().flatMapLatest { buyerId ->
-            conversationDao.observeAll(buyerId).map { entities ->
+            conversationDao.observeByBuyerId(buyerId).map { entities ->
                 entities.map { it.toDomain() }
+            }
+        }
+
+    override fun observeConversationsAsSeller(): Flow<List<Conversation>> =
+        authRepository.currentUserId().flatMapLatest { sellerId ->
+            conversationDao.observeBySellerId(sellerId).map { entities ->
+                entities.map { it.toDomain() }
+            }
+        }
+
+    override fun observeConversationForCurrentUser(conversationId: Long): Flow<Conversation?> =
+        authRepository.currentUserId().flatMapLatest { userId ->
+            conversationDao.observeById(conversationId).map { entity ->
+                entity?.takeIf { it.buyerId == userId || it.sellerId == userId }?.toDomain()
             }
         }
 
@@ -58,12 +73,21 @@ class ChatRepositoryImpl @Inject constructor(
             entities.map { it.toDomain() }
         }
 
+    override suspend fun getConversationForUser(conversationId: Long): Conversation? =
+        withContext(ioDispatcher) {
+            val userId = authRepository.currentUserId().first()
+            val entity = conversationDao.getById(conversationId) ?: return@withContext null
+            if (entity.buyerId != userId && entity.sellerId != userId) return@withContext null
+            entity.toDomain()
+        }
+
     override suspend fun getOrCreateConversation(product: Product): Result<Conversation> =
         withContext(ioDispatcher) {
             runCatching {
-                val seller = resolveSeller(product)
+                val seller = resolveSeller(listingDao, product)
                     ?: error("Cannot create conversation without seller")
                 val buyerId = authRepository.currentUserId().first()
+                val buyerDisplayName = resolveBuyerDisplayName(authRepository)
                 val existing = conversationDao.findByUniqueKey(
                     buyerId = buyerId,
                     sellerId = seller.sellerId,
@@ -81,9 +105,11 @@ class ChatRepositoryImpl @Inject constructor(
                         sellerId = seller.sellerId,
                         sellerDisplayName = seller.sellerDisplayName,
                         buyerId = buyerId,
+                        buyerDisplayName = buyerDisplayName,
                         lastMessagePreview = "",
                         lastMessageAt = now,
                         unreadCount = 0,
+                        sellerUnreadCount = 0,
                         createdAt = now,
                     ),
                 )
@@ -143,11 +169,26 @@ class ChatRepositoryImpl @Inject constructor(
                     id = conversationId,
                     preview = trimmed,
                     lastMessageAt = now,
-                    unreadCount = 0,
                 )
 
-                if (conversation.sellerId.startsWith(MOCK_SELLER_PREFIX)) {
-                    scheduleMockReply(conversationId, conversation.sellerId)
+                when (senderId) {
+                    conversation.buyerId -> {
+                        conversationDao.incrementSellerUnread(conversationId)
+                        if (conversation.sellerId.startsWith(MOCK_SELLER_PREFIX)) {
+                            scheduleMockReply(
+                                conversationDao = conversationDao,
+                                messageDao = messageDao,
+                                context = context,
+                                applicationScope = applicationScope,
+                                ioDispatcher = ioDispatcher,
+                                conversationId = conversationId,
+                                sellerId = conversation.sellerId,
+                            )
+                        }
+                    }
+                    conversation.sellerId -> {
+                        conversationDao.incrementBuyerUnread(conversationId)
+                    }
                 }
 
                 MessageEntity(
@@ -164,53 +205,74 @@ class ChatRepositoryImpl @Inject constructor(
 
     override suspend fun markConversationRead(conversationId: Long) =
         withContext(ioDispatcher) {
-            val buyerId = authRepository.currentUserId().first()
-            messageDao.markSellerMessagesRead(conversationId, buyerId)
-            conversationDao.clearUnread(conversationId)
+            val userId = authRepository.currentUserId().first()
+            val conversation = conversationDao.getById(conversationId) ?: return@withContext
+            messageDao.markOtherPartyMessagesRead(conversationId, userId)
+            when (userId) {
+                conversation.buyerId -> conversationDao.clearBuyerUnread(conversationId)
+                conversation.sellerId -> conversationDao.clearSellerUnread(conversationId)
+            }
         }
 
     override fun observeDraft(conversationId: Long): Flow<String> =
         messageDao.observeDraft(conversationId)
 
-    private suspend fun resolveSeller(product: Product): MockSellerResolver.MockSeller? =
-        when (product.source) {
-            ProductSource.LOCAL_LISTING -> listingDao.getByCatalogId(product.id)?.let { listing ->
-                MockSellerResolver.MockSeller(
-                    sellerId = listing.sellerId,
-                    sellerDisplayName = "挂牌卖家",
-                )
-            }
-            else -> MockSellerResolver.resolve(product)
-        }
-
-    private fun scheduleMockReply(conversationId: Long, sellerId: String) {
-        applicationScope.launch(ioDispatcher) {
-            delay(MOCK_SELLER_REPLY_DELAY_MS)
-            val conversation = conversationDao.getById(conversationId) ?: return@launch
-            val body = context.getString(R.string.chat_mock_reply_default)
-            val now = System.currentTimeMillis()
-            messageDao.insert(
-                MessageEntity(
-                    conversationId = conversationId,
-                    senderId = sellerId,
-                    body = body,
-                    status = MessageStatus.SENT.toEntityValue(),
-                    sentAt = now,
-                    isRead = false,
-                ),
-            )
-            conversationDao.updatePreview(
-                id = conversationId,
-                preview = body,
-                lastMessageAt = now,
-                unreadCount = conversation.unreadCount + 1,
-            )
-        }
-    }
-
     companion object {
         const val MOCK_SELLER_REPLY_DELAY_MS = 3_000L
         const val MAX_MESSAGE_LENGTH = 500
         private const val MOCK_SELLER_PREFIX = "mock-seller-"
+    }
+}
+
+private suspend fun resolveBuyerDisplayName(authRepository: AuthRepository): String =
+    when (val state = authRepository.observeAuthState().first()) {
+        AuthState.Guest -> "游客"
+        is AuthState.SignedIn -> state.profile.displayName
+    }
+
+private suspend fun resolveSeller(
+    listingDao: ListingDao,
+    product: Product,
+): MockSellerResolver.MockSeller? =
+    when (product.source) {
+        ProductSource.LOCAL_LISTING -> listingDao.getByCatalogId(product.id)?.let { listing ->
+            MockSellerResolver.MockSeller(
+                sellerId = listing.sellerId,
+                sellerDisplayName = "挂牌卖家",
+            )
+        }
+        else -> MockSellerResolver.resolve(product)
+    }
+
+private fun scheduleMockReply(
+    conversationDao: ConversationDao,
+    messageDao: MessageDao,
+    context: Context,
+    applicationScope: CoroutineScope,
+    ioDispatcher: CoroutineDispatcher,
+    conversationId: Long,
+    sellerId: String,
+) {
+    applicationScope.launch(ioDispatcher) {
+        delay(ChatRepositoryImpl.MOCK_SELLER_REPLY_DELAY_MS)
+        if (conversationDao.getById(conversationId) == null) return@launch
+        val body = context.getString(R.string.chat_mock_reply_default)
+        val now = System.currentTimeMillis()
+        messageDao.insert(
+            MessageEntity(
+                conversationId = conversationId,
+                senderId = sellerId,
+                body = body,
+                status = MessageStatus.SENT.toEntityValue(),
+                sentAt = now,
+                isRead = false,
+            ),
+        )
+        conversationDao.updatePreview(
+            id = conversationId,
+            preview = body,
+            lastMessageAt = now,
+        )
+        conversationDao.incrementBuyerUnread(conversationId)
     }
 }

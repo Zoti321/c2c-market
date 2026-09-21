@@ -14,9 +14,11 @@ fun ConversationEntity.toDomain(): Conversation = Conversation(
     sellerId = sellerId,
     sellerDisplayName = sellerDisplayName,
     buyerId = buyerId,
+    buyerDisplayName = buyerDisplayName,
     lastMessagePreview = lastMessagePreview,
     lastMessageAt = lastMessageAt,
     unreadCount = unreadCount,
+    sellerUnreadCount = sellerUnreadCount,
     createdAt = createdAt,
 )
 

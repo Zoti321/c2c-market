@@ -1,6 +1,7 @@
 package com.zoti321.c2cmarket.data.repository
 
 import com.zoti321.c2cmarket.domain.model.ListingInput
+import com.zoti321.c2cmarket.domain.model.ListingStatus
 import com.zoti321.c2cmarket.domain.model.Product
 import com.zoti321.c2cmarket.domain.repository.ListingRepository
 import kotlinx.coroutines.flow.Flow
@@ -32,6 +33,15 @@ class FakeListingRepository(
 
     override suspend fun delete(catalogId: Int): Result<Unit> =
         Result.failure(UnsupportedOperationException())
+
+    override suspend fun updateStatus(catalogId: Int, status: ListingStatus): Result<Unit> =
+        Result.success(Unit)
+
+    override suspend fun markReservedForCheckout(catalogIds: List<Int>) = Unit
+
+    override suspend fun markSoldForOrder(orderId: Long) = Unit
+
+    override suspend fun markAvailableForOrder(orderId: Long) = Unit
 
     override suspend fun searchLocal(query: String): List<Product> {
         val normalized = query.trim().lowercase()

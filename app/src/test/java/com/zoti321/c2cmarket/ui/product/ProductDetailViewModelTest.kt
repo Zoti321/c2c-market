@@ -112,6 +112,15 @@ private class FixedListingRepository(
 
     override suspend fun delete(catalogId: Int) = error("unused")
 
+    override suspend fun updateStatus(catalogId: Int, status: com.zoti321.c2cmarket.domain.model.ListingStatus) =
+        Result.success(Unit)
+
+    override suspend fun markReservedForCheckout(catalogIds: List<Int>) = Unit
+
+    override suspend fun markSoldForOrder(orderId: Long) = Unit
+
+    override suspend fun markAvailableForOrder(orderId: Long) = Unit
+
     override suspend fun searchLocal(query: String) = emptyList<Product>()
 }
 
@@ -145,18 +154,30 @@ private class NoOpCartRepository : CartRepository {
 private class NoOpFavoriteRepository : FavoriteRepository {
     override fun isFavorite(productId: Int): Flow<Boolean> = flowOf(false)
 
+    override fun observeFavorites(): Flow<List<Product>> = flowOf(emptyList())
+
     override suspend fun toggleFavorite(product: Product) = Result.success(false)
+
+    override suspend fun removeFavorite(productId: Int) = Result.success(Unit)
 }
 
 private class NoOpChatRepository : ChatRepository {
-    override fun observeConversations(): Flow<List<com.zoti321.c2cmarket.domain.model.Conversation>> =
+    override fun observeConversationsAsBuyer(): Flow<List<com.zoti321.c2cmarket.domain.model.Conversation>> =
         flowOf(emptyList())
+
+    override fun observeConversationsAsSeller(): Flow<List<com.zoti321.c2cmarket.domain.model.Conversation>> =
+        flowOf(emptyList())
+
+    override fun observeConversationForCurrentUser(conversationId: Long): Flow<com.zoti321.c2cmarket.domain.model.Conversation?> =
+        flowOf(null)
 
     override fun observeMessages(conversationId: Long): Flow<List<com.zoti321.c2cmarket.domain.model.Message>> =
         flowOf(emptyList())
 
     override suspend fun getOrCreateConversation(product: Product): Result<com.zoti321.c2cmarket.domain.model.Conversation> =
         Result.failure(IllegalStateException("unused"))
+
+    override suspend fun getConversationForUser(conversationId: Long): com.zoti321.c2cmarket.domain.model.Conversation? = null
 
     override suspend fun saveDraft(conversationId: Long, body: String) = Unit
 

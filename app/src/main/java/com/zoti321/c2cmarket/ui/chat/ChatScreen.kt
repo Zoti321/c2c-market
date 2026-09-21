@@ -37,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zoti321.c2cmarket.R
-import com.zoti321.c2cmarket.domain.GuestSession
 import com.zoti321.c2cmarket.domain.model.Message
 import com.zoti321.c2cmarket.ui.common.ErrorContent
 import com.zoti321.c2cmarket.ui.common.LoadingContent
@@ -75,7 +74,7 @@ fun ChatScreen(
                             Column {
                                 Text(state.productTitle, maxLines = 1)
                                 Text(
-                                    text = state.sellerDisplayName,
+                                    text = state.subtitle,
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1,
@@ -160,7 +159,10 @@ fun ChatScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     items(state.messages, key = { it.id }) { message ->
-                        MessageBubble(message = message)
+                        MessageBubble(
+                            message = message,
+                            currentUserId = state.currentUserId,
+                        )
                     }
                 }
             }
@@ -169,19 +171,19 @@ fun ChatScreen(
 }
 
 @Composable
-private fun MessageBubble(message: Message) {
-    val isBuyer = message.senderId == GuestSession.GUEST_ID
+private fun MessageBubble(message: Message, currentUserId: String) {
+    val isMine = message.senderId == currentUserId
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (isBuyer) Arrangement.End else Arrangement.Start,
+        horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start,
     ) {
         Column(
-            horizontalAlignment = if (isBuyer) Alignment.End else Alignment.Start,
+            horizontalAlignment = if (isMine) Alignment.End else Alignment.Start,
         ) {
             Box(
                 modifier = Modifier
                     .background(
-                        color = if (isBuyer) {
+                        color = if (isMine) {
                             MaterialTheme.colorScheme.primaryContainer
                         } else {
                             MaterialTheme.colorScheme.surfaceVariant

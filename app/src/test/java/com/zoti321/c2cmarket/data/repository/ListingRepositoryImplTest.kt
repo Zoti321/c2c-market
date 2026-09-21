@@ -30,6 +30,7 @@ class ListingRepositoryImplTest {
             listingDao = database.listingDao(),
             cartDao = database.cartDao(),
             favoriteDao = database.favoriteDao(),
+            orderDao = database.orderDao(),
             authRepository = FakeAuthRepository(),
         )
     }
@@ -53,6 +54,7 @@ class ListingRepositoryImplTest {
         val listing = repository.create(validInput("Delete Me")).getOrThrow()
         database.cartDao().insert(
             com.zoti321.c2cmarket.data.local.entity.CartItemEntity(
+                userId = "guest",
                 productId = listing.id,
                 title = listing.title,
                 unitPrice = listing.price,
@@ -61,13 +63,13 @@ class ListingRepositoryImplTest {
                 addedAt = 1L,
             ),
         )
-        database.favoriteDao().insert(FavoriteEntity(listing.id, 1L))
+        database.favoriteDao().insert(FavoriteEntity("guest", listing.id, 1L))
 
         repository.delete(listing.id)
 
         assertTrue(database.listingDao().getByCatalogId(listing.id) == null)
-        assertTrue(database.cartDao().getByProductId(listing.id) == null)
-        assertFalse(database.favoriteDao().isFavorite(listing.id))
+        assertTrue(database.cartDao().getByProductId("guest", listing.id) == null)
+        assertFalse(database.favoriteDao().isFavorite("guest", listing.id))
     }
 
     @Test
@@ -91,6 +93,56 @@ class ListingRepositoryImplTest {
 
         assertEquals(1, electronics.size)
         assertEquals("Phone", electronics.first().title)
+    }
+
+    @Test
+    fun updateStatus_changesListingStatus() = runTest {
+        val listing = repository.create(validInput("Status Item")).getOrThrow()
+
+        repository.updateStatus(listing.id, com.zoti321.c2cmarket.domain.model.ListingStatus.SOLD)
+
+        val stored = database.listingDao().getByCatalogId(listing.id)
+        assertEquals("SOLD", stored?.status)
+    }
+
+    @Test
+    fun observeAsProducts_excludesSoldListings() = runTest {
+        val listing = repository.create(validInput("Hidden When Sold")).getOrThrow()
+        repository.updateStatus(listing.id, com.zoti321.c2cmarket.domain.model.ListingStatus.SOLD)
+
+        val public = repository.observeAsProducts().first()
+
+        assertTrue(public.none { it.id == listing.id })
+    }
+
+    @Test
+    fun markReservedForCheckout_updatesAvailableListing() = runTest {
+        val listing = repository.create(validInput("Checkout Item")).getOrThrow()
+
+        repository.markReservedForCheckout(listOf(listing.id))
+
+        val stored = database.listingDao().getByCatalogId(listing.id)
+        assertEquals(com.zoti321.c2cmarket.domain.model.ListingStatus.RESERVED.name, stored?.status)
+    }
+
+    @Test
+    fun updateStatus_canMarkRemoved() = runTest {
+        val listing = repository.create(validInput("Removed Item")).getOrThrow()
+
+        repository.updateStatus(listing.id, com.zoti321.c2cmarket.domain.model.ListingStatus.REMOVED)
+
+        val stored = database.listingDao().getByCatalogId(listing.id)
+        assertEquals("REMOVED", stored?.status)
+    }
+
+    @Test
+    fun delete_reservedListing_fails() = runTest {
+        val listing = repository.create(validInput("Reserved Item")).getOrThrow()
+        database.listingDao().updateStatus(listing.id, "RESERVED", System.currentTimeMillis())
+
+        val result = repository.delete(listing.id)
+
+        assertTrue(result.isFailure)
     }
 
     private fun validInput(title: String, category: String = "electronics") = ListingInput(

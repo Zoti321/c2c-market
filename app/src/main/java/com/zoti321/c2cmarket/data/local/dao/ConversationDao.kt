@@ -8,9 +8,13 @@ import com.zoti321.c2cmarket.data.local.entity.ConversationEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
+@Suppress("TooManyFunctions")
 interface ConversationDao {
     @Query("SELECT * FROM conversations WHERE buyerId = :buyerId ORDER BY lastMessageAt DESC")
-    fun observeAll(buyerId: String): Flow<List<ConversationEntity>>
+    fun observeByBuyerId(buyerId: String): Flow<List<ConversationEntity>>
+
+    @Query("SELECT * FROM conversations WHERE sellerId = :sellerId ORDER BY lastMessageAt DESC")
+    fun observeBySellerId(sellerId: String): Flow<List<ConversationEntity>>
 
     @Query(
         """
@@ -28,6 +32,9 @@ interface ConversationDao {
     @Query("SELECT * FROM conversations WHERE id = :id LIMIT 1")
     suspend fun getById(id: Long): ConversationEntity?
 
+    @Query("SELECT * FROM conversations WHERE id = :id LIMIT 1")
+    fun observeById(id: Long): Flow<ConversationEntity?>
+
     @Insert
     suspend fun insert(entity: ConversationEntity): Long
 
@@ -35,7 +42,10 @@ interface ConversationDao {
     suspend fun update(entity: ConversationEntity)
 
     @Query("UPDATE conversations SET unreadCount = 0 WHERE id = :conversationId")
-    suspend fun clearUnread(conversationId: Long)
+    suspend fun clearBuyerUnread(conversationId: Long)
+
+    @Query("UPDATE conversations SET sellerUnreadCount = 0 WHERE id = :conversationId")
+    suspend fun clearSellerUnread(conversationId: Long)
 
     @Query("UPDATE conversations SET buyerId = :newUserId WHERE buyerId = 'guest'")
     suspend fun migrateGuestConversations(newUserId: String)
@@ -43,7 +53,7 @@ interface ConversationDao {
     @Query(
         """
         UPDATE conversations
-        SET lastMessagePreview = :preview, lastMessageAt = :lastMessageAt, unreadCount = :unreadCount
+        SET lastMessagePreview = :preview, lastMessageAt = :lastMessageAt
         WHERE id = :id
         """,
     )
@@ -51,6 +61,11 @@ interface ConversationDao {
         id: Long,
         preview: String,
         lastMessageAt: Long,
-        unreadCount: Int,
     )
+
+    @Query("UPDATE conversations SET unreadCount = unreadCount + 1 WHERE id = :conversationId")
+    suspend fun incrementBuyerUnread(conversationId: Long)
+
+    @Query("UPDATE conversations SET sellerUnreadCount = sellerUnreadCount + 1 WHERE id = :conversationId")
+    suspend fun incrementSellerUnread(conversationId: Long)
 }
