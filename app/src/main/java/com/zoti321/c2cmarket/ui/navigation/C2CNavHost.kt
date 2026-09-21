@@ -143,8 +143,8 @@ fun C2CApp(deepLinkIntent: Intent? = null) {
                             navController.navigate(Routes.editListing(catalogId))
                         },
                         onManageAddresses = { navController.navigate(Routes.ADDRESS_LIST) },
-                        onBuyerMessagesClick = { navController.navigate(Routes.conversationsBuyer()) },
-                        onSellerMessagesClick = { navController.navigate(Routes.conversationsSeller()) },
+                        onBuyerMessagesClick = { navController.navigate(Routes.CONVERSATIONS_BUYER) },
+                        onSellerMessagesClick = { navController.navigate(Routes.CONVERSATIONS_SELLER) },
                         onFavoritesClick = { navController.navigate(Routes.FAVORITES) },
                     ),
                 )

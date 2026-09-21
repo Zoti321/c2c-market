@@ -9,6 +9,7 @@ import com.zoti321.c2cmarket.data.local.entity.OrderLineItemEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
+@Suppress("TooManyFunctions")
 interface OrderDao {
     @Insert
     suspend fun insertOrder(order: OrderEntity): Long

@@ -8,6 +8,7 @@ import com.zoti321.c2cmarket.data.local.entity.ConversationEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
+@Suppress("TooManyFunctions")
 interface ConversationDao {
     @Query("SELECT * FROM conversations WHERE buyerId = :buyerId ORDER BY lastMessageAt DESC")
     fun observeByBuyerId(buyerId: String): Flow<List<ConversationEntity>>

@@ -162,9 +162,6 @@ private class NoOpFavoriteRepository : FavoriteRepository {
 }
 
 private class NoOpChatRepository : ChatRepository {
-    override fun observeConversations(): Flow<List<com.zoti321.c2cmarket.domain.model.Conversation>> =
-        flowOf(emptyList())
-
     override fun observeConversationsAsBuyer(): Flow<List<com.zoti321.c2cmarket.domain.model.Conversation>> =
         flowOf(emptyList())
 

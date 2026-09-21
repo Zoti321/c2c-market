@@ -8,6 +8,7 @@ import com.zoti321.c2cmarket.data.local.entity.ListingEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
+@Suppress("TooManyFunctions")
 interface ListingDao {
     @Query("SELECT * FROM listings ORDER BY createdAt DESC")
     fun observeAll(): Flow<List<ListingEntity>>

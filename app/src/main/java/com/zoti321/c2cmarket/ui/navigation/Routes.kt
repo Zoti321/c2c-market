@@ -34,8 +34,8 @@ object Routes {
 
     const val CONVERSATIONS = "conversations/{role}"
     const val CONVERSATION_ROLE_ARG = "role"
-    fun conversationsBuyer() = "conversations/buyer"
-    fun conversationsSeller() = "conversations/seller"
+    const val CONVERSATIONS_BUYER = "conversations/buyer"
+    const val CONVERSATIONS_SELLER = "conversations/seller"
     const val CHAT = "chat/{conversationId}"
     const val CONVERSATION_ID_ARG = "conversationId"
     fun chat(conversationId: Long) = "chat/$conversationId"

@@ -25,8 +25,6 @@ class FakeChatRepository(
     val markReadCalls = mutableListOf<Long>()
     val sendCalls = mutableListOf<Pair<Long, String>>()
 
-    override fun observeConversations(): Flow<List<Conversation>> = observeConversationsAsBuyer()
-
     override fun observeConversationsAsBuyer(): Flow<List<Conversation>> = buyerConversationsState
 
     override fun observeConversationsAsSeller(): Flow<List<Conversation>> = sellerConversationsState

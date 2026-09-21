@@ -141,7 +141,7 @@ class ChatRepositoryImplTest {
 
         repository.markConversationRead(conversation.id)
 
-        val updated = repository.observeConversations().first().first()
+        val updated = repository.observeConversationsAsBuyer().first().first()
         assertEquals(0, updated.unreadCount)
         val messages = repository.observeMessages(conversation.id).first()
         assertTrue(messages.any { it.senderId == conversation.sellerId && it.isRead })
@@ -160,7 +160,7 @@ class ChatRepositoryImplTest {
         assertEquals(conversation.sellerId, messages.last().senderId)
         assertFalse(messages.last().isRead)
 
-        val updated = repository.observeConversations().first().first()
+        val updated = repository.observeConversationsAsBuyer().first().first()
         assertEquals(1, updated.unreadCount)
         assertTrue(updated.lastMessagePreview.isNotEmpty())
     }
@@ -184,7 +184,7 @@ class ChatRepositoryImplTest {
             applicationScope = testScope,
             ioDispatcher = StandardTestDispatcher(testScheduler),
         )
-        val listingProduct = localListingProduct(sellerId = sellerId)
+        val listingProduct = localListingProduct()
         database.listingDao().insert(
             com.zoti321.c2cmarket.data.local.entity.ListingEntity(
                 catalogId = listingProduct.id,
@@ -227,7 +227,7 @@ class ChatRepositoryImplTest {
             applicationScope = testScope,
             ioDispatcher = StandardTestDispatcher(testScheduler),
         )
-        val listingProduct = localListingProduct(sellerId = sellerId)
+        val listingProduct = localListingProduct()
         database.listingDao().insert(
             com.zoti321.c2cmarket.data.local.entity.ListingEntity(
                 catalogId = listingProduct.id,
@@ -271,7 +271,7 @@ class ChatRepositoryImplTest {
             applicationScope = testScope,
             ioDispatcher = StandardTestDispatcher(testScheduler),
         )
-        val listingProduct = localListingProduct(sellerId = sellerId)
+        val listingProduct = localListingProduct()
         database.listingDao().insert(
             com.zoti321.c2cmarket.data.local.entity.ListingEntity(
                 catalogId = listingProduct.id,
@@ -294,7 +294,7 @@ class ChatRepositoryImplTest {
         assertEquals(1, sellerInbox.first().sellerUnreadCount)
     }
 
-    private fun localListingProduct(sellerId: String) = Product(
+    private fun localListingProduct() = Product(
         id = -1,
         title = "Local Listing",
         price = 50.0,

@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 
 @Singleton
+@Suppress("TooManyFunctions")
 class ListingRepositoryImpl @Inject constructor(
     private val database: C2CDatabase,
     private val listingDao: ListingDao,

@@ -5,6 +5,7 @@ import com.zoti321.c2cmarket.domain.model.ListingStatus
 import com.zoti321.c2cmarket.domain.model.Product
 import kotlinx.coroutines.flow.Flow
 
+@Suppress("TooManyFunctions")
 interface ListingRepository {
     fun observeAsProducts(): Flow<List<Product>>
 
