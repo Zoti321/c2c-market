@@ -1,6 +1,6 @@
 # BaaS 后端选型调研（v5+ 候选）
 
-> **状态**：调研草案 · v4 不引入远端后端  
+> **状态**：候选概览 · v5 结论见 [`firebase-vs-supabase-v5.md`](firebase-vs-supabase-v5.md)（2026-09-21：**推荐 Firebase**）  
 > **关联**：ADR-0006（聊天 local-first）、ADR-0010（v4 仍 Room SSOT）、路线图 [#41](https://github.com/Zoti321/c2c-market/issues/41)
 
 v3 完成买家私信、Google 登录与 Deep Link；v4 聚焦**卖家闭环 + 订单状态机**（仍 local-first）。本文档为 **v5+** 引入远端同步、Push、跨设备账号等能力时的选型参考。
