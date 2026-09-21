@@ -2,26 +2,33 @@ package com.zoti321.c2cmarket.data.repository
 
 import android.content.Context
 import com.zoti321.c2cmarket.R
+import com.zoti321.c2cmarket.data.firebase.FirebaseAuthGateway
+import com.zoti321.c2cmarket.data.firebase.buildConversationRemoteId
 import com.zoti321.c2cmarket.data.local.C2CDatabase
 import com.zoti321.c2cmarket.data.local.dao.ConversationDao
 import com.zoti321.c2cmarket.data.local.dao.ListingDao
 import com.zoti321.c2cmarket.data.local.dao.MessageDao
 import com.zoti321.c2cmarket.data.local.dao.observeDraft
 import com.zoti321.c2cmarket.data.local.entity.MessageEntity
+import com.zoti321.c2cmarket.data.local.entity.SyncStateValues
 import com.zoti321.c2cmarket.data.mapper.toDomain
 import com.zoti321.c2cmarket.data.mapper.toEntityValue
+import com.zoti321.c2cmarket.data.sync.RemoteSyncGateway
 import com.zoti321.c2cmarket.di.ApplicationScope
 import com.zoti321.c2cmarket.di.IoDispatcher
 import com.zoti321.c2cmarket.domain.MockSellerResolver
+import com.zoti321.c2cmarket.domain.datasource.ChatRemoteDataSource
 import com.zoti321.c2cmarket.domain.model.AuthState
 import com.zoti321.c2cmarket.domain.model.Conversation
 import com.zoti321.c2cmarket.domain.model.Message
 import com.zoti321.c2cmarket.domain.model.MessageStatus
 import com.zoti321.c2cmarket.domain.model.Product
 import com.zoti321.c2cmarket.domain.model.ProductSource
+import com.zoti321.c2cmarket.domain.model.UserIds
 import com.zoti321.c2cmarket.domain.repository.AuthRepository
 import com.zoti321.c2cmarket.domain.repository.ChatRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
@@ -38,6 +45,9 @@ import kotlinx.coroutines.withContext
 class ChatRepositoryImpl @Inject constructor(
     database: C2CDatabase,
     private val authRepository: AuthRepository,
+    private val chatRemote: ChatRemoteDataSource,
+    private val firebaseAuthGateway: FirebaseAuthGateway,
+    private val remoteSyncGateway: RemoteSyncGateway,
     @ApplicationContext private val context: Context,
     @ApplicationScope private val applicationScope: CoroutineScope,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
@@ -81,6 +91,28 @@ class ChatRepositoryImpl @Inject constructor(
             entity.toDomain()
         }
 
+    override suspend fun resolveLocalConversationId(remoteId: String): Long? =
+        withContext(ioDispatcher) {
+            conversationDao.findByRemoteId(remoteId)?.id
+        }
+
+    override fun startActiveConversationSync(conversationId: Long) {
+        applicationScope.launch(ioDispatcher) {
+            val entity = conversationDao.getById(conversationId) ?: return@launch
+            val remoteId = entity.remoteId ?: buildConversationRemoteId(
+                entity.buyerId,
+                entity.sellerId,
+                entity.productId,
+            )
+            if (!shouldUseRemote(entity.sellerId)) return@launch
+            remoteSyncGateway.observeActiveConversationMessages(remoteId)
+        }
+    }
+
+    override fun stopActiveConversationSync() {
+        remoteSyncGateway.stopActiveConversationMessages()
+    }
+
     override suspend fun getOrCreateConversation(product: Product): Result<Conversation> =
         withContext(ioDispatcher) {
             runCatching {
@@ -97,6 +129,7 @@ class ChatRepositoryImpl @Inject constructor(
                     return@runCatching existing.toDomain()
                 }
                 val now = System.currentTimeMillis()
+                val remoteId = buildConversationRemoteId(buyerId, seller.sellerId, product.id)
                 val id = conversationDao.insert(
                     com.zoti321.c2cmarket.data.local.entity.ConversationEntity(
                         productId = product.id,
@@ -111,10 +144,16 @@ class ChatRepositoryImpl @Inject constructor(
                         unreadCount = 0,
                         sellerUnreadCount = 0,
                         createdAt = now,
+                        remoteId = remoteId,
                     ),
                 )
-                conversationDao.getById(id)?.toDomain()
+                val created = conversationDao.getById(id)?.toDomain()
                     ?: error("Failed to load created conversation")
+                if (shouldUseRemote(seller.sellerId)) {
+                    chatRemote.ensureConversation(created, remoteId)
+                        .onFailure { /* best-effort */ }
+                }
+                created
             }
         }
 
@@ -155,6 +194,7 @@ class ChatRepositoryImpl @Inject constructor(
 
                 messageDao.deleteDraft(conversationId)
                 val now = System.currentTimeMillis()
+                val remoteId = UUID.randomUUID().toString()
                 val messageId = messageDao.insert(
                     MessageEntity(
                         conversationId = conversationId,
@@ -163,6 +203,8 @@ class ChatRepositoryImpl @Inject constructor(
                         status = MessageStatus.SENT.toEntityValue(),
                         sentAt = now,
                         isRead = true,
+                        remoteId = remoteId,
+                        syncState = SyncStateValues.PENDING,
                     ),
                 )
                 conversationDao.updatePreview(
@@ -191,7 +233,7 @@ class ChatRepositoryImpl @Inject constructor(
                     }
                 }
 
-                MessageEntity(
+                val message = MessageEntity(
                     id = messageId,
                     conversationId = conversationId,
                     senderId = senderId,
@@ -199,7 +241,17 @@ class ChatRepositoryImpl @Inject constructor(
                     status = MessageStatus.SENT.toEntityValue(),
                     sentAt = now,
                     isRead = true,
+                    remoteId = remoteId,
+                    syncState = SyncStateValues.PENDING,
                 ).toDomain()
+
+                if (shouldUseRemote(conversation.sellerId)) {
+                    uploadMessage(conversation.toDomain(), message, remoteId)
+                } else {
+                    messageDao.updateRemoteSync(messageId, remoteId, SyncStateValues.SYNCED)
+                }
+
+                message
             }
         }
 
@@ -217,10 +269,48 @@ class ChatRepositoryImpl @Inject constructor(
     override fun observeDraft(conversationId: Long): Flow<String> =
         messageDao.observeDraft(conversationId)
 
+    override suspend fun retryPendingUploads() = withContext(ioDispatcher) {
+        if (!firebaseAuthGateway.isSignedIn()) return@withContext
+        val pending = messageDao.getPendingMessages()
+        pending.forEach { entity ->
+            val conversation = conversationDao.getById(entity.conversationId) ?: return@forEach
+            if (!shouldUseRemote(conversation.sellerId)) return@forEach
+            val remoteId = entity.remoteId ?: return@forEach
+            val message = entity.toDomain()
+            uploadMessage(conversation.toDomain(), message, remoteId)
+        }
+    }
+
+    private suspend fun uploadMessage(conversation: Conversation, message: Message, remoteId: String) {
+        val conversationRemoteId = conversation.remoteId
+            ?: buildConversationRemoteId(conversation.buyerId, conversation.sellerId, conversation.productId)
+        chatRemote.uploadMessage(conversationRemoteId, message, remoteId)
+            .onSuccess {
+                messageDao.updateRemoteSync(message.id, remoteId, SyncStateValues.SYNCED)
+            }
+            .onFailure {
+                messageDao.updateRemoteSync(message.id, remoteId, SyncStateValues.PENDING)
+                scheduleRetry()
+            }
+    }
+
+    private fun scheduleRetry() {
+        applicationScope.launch(ioDispatcher) {
+            delay(RETRY_DELAY_MS)
+            retryPendingUploads()
+        }
+    }
+
+    private suspend fun shouldUseRemote(sellerId: String): Boolean =
+        firebaseAuthGateway.isSignedIn() &&
+            authRepository.currentUserId().first() != UserIds.GUEST &&
+            !sellerId.startsWith(MOCK_SELLER_PREFIX)
+
     companion object {
         const val MOCK_SELLER_REPLY_DELAY_MS = 3_000L
         const val MAX_MESSAGE_LENGTH = 500
         private const val MOCK_SELLER_PREFIX = "mock-seller-"
+        private const val RETRY_DELAY_MS = 5_000L
     }
 }
 

@@ -27,4 +27,12 @@ data class MessageEntity(
     val status: String,
     val sentAt: Long?,
     val isRead: Boolean,
+    val remoteId: String? = null,
+    val syncState: String = SyncStateValues.SYNCED,
 )
+
+object SyncStateValues {
+    const val SYNCED = "SYNCED"
+    const val PENDING = "PENDING"
+    const val FAILED = "FAILED"
+}

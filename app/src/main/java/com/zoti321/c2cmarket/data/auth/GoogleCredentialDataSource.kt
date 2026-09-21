@@ -7,6 +7,7 @@ data class GoogleSignInResult(
     val displayName: String,
     val email: String?,
     val photoUrl: String?,
+    val idToken: String,
 )
 
 class MissingWebClientIdException :

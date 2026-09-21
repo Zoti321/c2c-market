@@ -68,4 +68,28 @@ interface ConversationDao {
 
     @Query("UPDATE conversations SET sellerUnreadCount = sellerUnreadCount + 1 WHERE id = :conversationId")
     suspend fun incrementSellerUnread(conversationId: Long)
+
+    @Query("SELECT * FROM conversations WHERE remoteId = :remoteId LIMIT 1")
+    suspend fun findByRemoteId(remoteId: String): ConversationEntity?
+
+    @Query("UPDATE conversations SET remoteId = :remoteId WHERE id = :id")
+    suspend fun updateRemoteId(id: Long, remoteId: String)
+
+    @Query(
+        """
+        UPDATE conversations
+        SET lastMessagePreview = :preview,
+            lastMessageAt = :lastMessageAt,
+            unreadCount = :unreadCount,
+            sellerUnreadCount = :sellerUnreadCount
+        WHERE id = :id AND lastMessageAt <= :lastMessageAt
+        """,
+    )
+    suspend fun mergePreviewIfNewer(
+        id: Long,
+        preview: String,
+        lastMessageAt: Long,
+        unreadCount: Int,
+        sellerUnreadCount: Int,
+    )
 }

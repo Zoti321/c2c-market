@@ -187,6 +187,19 @@ val MIGRATION_9_10 = object : Migration(9, 10) {
     }
 }
 
+val MIGRATION_10_11 = object : Migration(10, 11) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE conversations ADD COLUMN remoteId TEXT")
+        db.execSQL("ALTER TABLE messages ADD COLUMN remoteId TEXT")
+        db.execSQL("ALTER TABLE messages ADD COLUMN syncState TEXT NOT NULL DEFAULT 'SYNCED'")
+        db.execSQL("ALTER TABLE orders ADD COLUMN remoteId TEXT")
+        db.execSQL("ALTER TABLE orders ADD COLUMN syncState TEXT NOT NULL DEFAULT 'SYNCED'")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_conversations_remoteId ON conversations(remoteId)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_messages_remoteId ON messages(remoteId)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_orders_remoteId ON orders(remoteId)")
+    }
+}
+
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL(

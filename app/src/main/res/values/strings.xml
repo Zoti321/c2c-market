@@ -137,6 +137,7 @@
 
     <!-- Notifications -->
     <string name="notification_channel_orders">订单通知</string>
+    <string name="notification_channel_chat">聊天消息</string>
     <string name="notification_order_shipped_title">Mock 配送提醒</string>
     <string name="notification_order_shipped_body">订单 %1$s 已模拟进入配送</string>
     <string name="notification_order_pending_seller_title">新卖出订单</string>

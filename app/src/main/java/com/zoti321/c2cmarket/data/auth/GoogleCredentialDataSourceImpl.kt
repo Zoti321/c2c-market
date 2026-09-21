@@ -31,11 +31,14 @@ class GoogleCredentialDataSourceImpl @Inject constructor() : GoogleCredentialDat
                 )
             }
             val googleCredential = GoogleIdTokenCredential.createFrom(response.credential.data)
+            val idToken = googleCredential.idToken
+                ?: error("Google ID Token missing")
             GoogleSignInResult(
                 sub = googleCredential.id,
                 displayName = googleCredential.displayName.orEmpty(),
-                email = extractEmail(googleCredential.idToken),
+                email = extractEmail(idToken),
                 photoUrl = googleCredential.profilePictureUri?.toString(),
+                idToken = idToken,
             )
         }
 

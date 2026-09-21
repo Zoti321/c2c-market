@@ -106,6 +106,10 @@ private class FakeOrderRepositoryWithOrder(
     override suspend fun confirmMeetupAsSeller(orderId: Long): Result<Unit> = Result.success(Unit)
 
     override suspend fun cancelOrderAsSeller(orderId: Long): Result<Unit> = Result.success(Unit)
+
+    override suspend fun resolveLocalId(remoteOrderId: String): Long? = null
+
+    override suspend fun retryPendingUploads() = Unit
 }
 
 private class EmptyOrderRepository : OrderRepository {
@@ -127,6 +131,10 @@ private class EmptyOrderRepository : OrderRepository {
     override suspend fun confirmMeetupAsSeller(orderId: Long): Result<Unit> = Result.success(Unit)
 
     override suspend fun cancelOrderAsSeller(orderId: Long): Result<Unit> = Result.success(Unit)
+
+    override suspend fun resolveLocalId(remoteOrderId: String): Long? = null
+
+    override suspend fun retryPendingUploads() = Unit
 }
 
 private class EmptyBrowseHistoryRepository : BrowseHistoryRepository {

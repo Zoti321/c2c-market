@@ -25,4 +25,12 @@ interface ChatRepository {
     suspend fun markConversationRead(conversationId: Long)
 
     fun observeDraft(conversationId: Long): Flow<String>
+
+    suspend fun resolveLocalConversationId(remoteId: String): Long?
+
+    fun startActiveConversationSync(conversationId: Long)
+
+    fun stopActiveConversationSync()
+
+    suspend fun retryPendingUploads()
 }

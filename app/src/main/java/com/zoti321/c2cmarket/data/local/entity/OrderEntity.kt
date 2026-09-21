@@ -16,4 +16,6 @@ data class OrderEntity(
     val meetupLocation: String? = null,
     val buyerMeetupConfirmed: Boolean = false,
     val sellerMeetupConfirmed: Boolean = false,
+    val remoteId: String? = null,
+    val syncState: String = SyncStateValues.SYNCED,
 )

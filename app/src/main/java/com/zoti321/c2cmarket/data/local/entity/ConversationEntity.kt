@@ -27,4 +27,5 @@ data class ConversationEntity(
     val unreadCount: Int,
     val sellerUnreadCount: Int = 0,
     val createdAt: Long,
+    val remoteId: String? = null,
 )

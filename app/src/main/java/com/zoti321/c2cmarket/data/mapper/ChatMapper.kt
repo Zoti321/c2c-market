@@ -20,6 +20,7 @@ fun ConversationEntity.toDomain(): Conversation = Conversation(
     unreadCount = unreadCount,
     sellerUnreadCount = sellerUnreadCount,
     createdAt = createdAt,
+    remoteId = remoteId,
 )
 
 fun MessageEntity.toDomain(): Message = Message(

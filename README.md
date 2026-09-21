@@ -68,18 +68,18 @@
 - [x] v4.5 测试（[约定 v4.5 测试范围与策略规格](https://github.com/Zoti321/c2c-market/issues/46)）
 - [x] v4.6 Release + R8（[约定 v4.6 Release、R8 与 CI 规格](https://github.com/Zoti321/c2c-market/issues/47)）
 
-### v5（当前阶段）
+### v5（已交付）
 
-**路线图**（[#49](https://github.com/Zoti321/c2c-market/issues/49)）**决策路线进行中**（`feature/v5` → 目标 **5.0.0**）。后端选型：**Firebase**（[调研结论](docs/research/firebase-vs-supabase-v5.md)）；架构：**Room SSOT + Firestore 远端同步**（[ADR-0010](docs/adr/0010-defer-baas-backend-to-v5-plus.md)）。
+**路线图**（[#49](https://github.com/Zoti321/c2c-market/issues/49)）**已合入 `feature/v5`**（**5.0.0**）。Release 验收见 [`docs/release-smoke-v5.md`](docs/release-smoke-v5.md)。
 
 - [x] 调研 Firebase vs Supabase（[#50](https://github.com/Zoti321/c2c-market/issues/50)）
-- [ ] v5.0 Firebase 基线 + ADR-0011（[约定 v5.0 规格](https://github.com/Zoti321/c2c-market/issues/51)）
-- [ ] v5.1 聊天 Firestore 同步（[约定 v5.1 规格](https://github.com/Zoti321/c2c-market/issues/52)）
-- [ ] v5.2 挂牌图片 Storage（[约定 v5.2 规格](https://github.com/Zoti321/c2c-market/issues/53)）
-- [ ] v5.3 FCM Push + Deep Link（[约定 v5.3 规格](https://github.com/Zoti321/c2c-market/issues/54)）
-- [ ] v5.4 挂牌 / 订单 Firestore 同步（[约定 v5.4 规格](https://github.com/Zoti321/c2c-market/issues/55)）
-- [ ] v5.5 测试（[约定 v5.5 规格](https://github.com/Zoti321/c2c-market/issues/56)）
-- [ ] v5.6 Release + R8（[约定 v5.6 规格](https://github.com/Zoti321/c2c-market/issues/57)）
+- [x] v5.0 Firebase 基线 + ADR-0011（[#51](https://github.com/Zoti321/c2c-market/issues/51)）
+- [x] v5.1 聊天 Firestore 同步（[#52](https://github.com/Zoti321/c2c-market/issues/52)）
+- [x] v5.2 挂牌图片 Storage（[#53](https://github.com/Zoti321/c2c-market/issues/53)）
+- [x] v5.3 FCM Push + Deep Link（[#54](https://github.com/Zoti321/c2c-market/issues/54)）
+- [x] v5.4 挂牌 / 订单 Firestore 同步（[#55](https://github.com/Zoti321/c2c-market/issues/55)）
+- [x] v5.5 测试（[#56](https://github.com/Zoti321/c2c-market/issues/56)）
+- [x] v5.6 Release + R8（[#57](https://github.com/Zoti321/c2c-market/issues/57)）
 
 **Implement 顺序**：v5.0 → v5.1 → v5.2 → v5.3 → v5.4 + v5.5 测试 + v5.6 Release **同 PR**。
 
@@ -155,6 +155,14 @@ Base URL: `https://fakestoreapi.com/`
 ```
 
 Release 本地配置（均 gitignore，见 [`keystore.properties.example`](keystore.properties.example)、[`local.properties.example`](local.properties.example)）。
+
+### Firebase 本地 setup（v5 远端功能）
+
+1. 在 [Firebase Console](https://console.firebase.google.com/) 创建项目
+2. 添加 Android App（包名 `com.zoti321.c2cmarket`），下载 `google-services.json` → 复制到 `app/google-services.json`（见 [`app/google-services.json.example`](app/google-services.json.example)）
+3. `local.properties` 配置 `google.web_client_id`（与 Console OAuth Web Client 一致）
+4. 可选：`firebase deploy --only functions,firestore:rules,storage`（Cloud Functions 见 [`functions/`](functions/)）
+5. 游客模式可用 FakeStore / 本地功能；**聊天 sync、云图片、FCM、挂牌/订单 sync 需 Google 登录**
 
 > FakeStore **无需 API Key**，确保设备可访问互联网即可。
 

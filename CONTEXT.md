@@ -103,3 +103,15 @@ _Avoid_: 扫码核销、GPS 签到
 **订单状态**（挂牌订单）：
 `PENDING`（待卖家确认）→ `CONFIRMED`（待面交）→ `COMPLETED` / `CANCELLED`（v4.3）。纯 FakeStore **订单**仍为下单即 `COMPLETED`。
 _Avoid_: 已支付、已发货（真物流）
+
+**云同步**（v5）：
+Room 仍为 SSOT；Firestore / Storage 为远端副本。聊天、挂牌元数据、面交订单跨设备 sync；需 Google 登录 + Firebase 项目。
+_Avoid_: 远端为唯一真相源
+
+**云图片**（v5）：
+挂牌封面经 Firebase Storage 上传后以 HTTPS URL 存 Room；Coil 直接加载。
+_Avoid_: 本地 content URI 跨设备共享
+
+**Push 通知**（v5）：
+面交订单状态与聊天消息经 FCM（Cloud Functions 触发）；FakeStore 非面交 SHIPPED 仍用 WorkManager（ADR-0007）。
+_Avoid_: 真物流 Push、客户端 Server Key

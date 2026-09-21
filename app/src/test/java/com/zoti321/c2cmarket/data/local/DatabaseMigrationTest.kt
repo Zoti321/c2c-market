@@ -77,6 +77,58 @@ class DatabaseMigrationTest {
     }
 
     @Test
+    fun migrate10To11_addsRemoteSyncColumns() {
+        openDatabase(version = 10, onCreate = { db ->
+            createV10Conversation(db)
+            createV10Message(db)
+            createV10Order(db)
+            db.execSQL(
+                """
+                INSERT INTO conversations (
+                    id, productId, productTitle, productImageUrl, sellerId, sellerDisplayName,
+                    buyerId, buyerDisplayName, lastMessagePreview, lastMessageAt, unreadCount,
+                    sellerUnreadCount, createdAt
+                ) VALUES (1, 1, 'P', 'img', 'seller', '卖家', 'guest', '游客', '', 1, 0, 0, 1)
+                """.trimIndent(),
+            )
+            db.execSQL(
+                """
+                INSERT INTO messages (
+                    id, conversationId, senderId, body, status, sentAt, isRead
+                ) VALUES (1, 1, 'guest', 'hi', 'SENT', 1, 1)
+                """.trimIndent(),
+            )
+            db.execSQL(
+                """
+                INSERT INTO orders (id, guestId, totalAmount, status, createdAt)
+                VALUES (1, 'guest', 10.0, 'COMPLETED', 1)
+                """.trimIndent(),
+            )
+        }).use { db ->
+            MIGRATION_10_11.migrate(db)
+
+            db.query("PRAGMA table_info(conversations)").use { cursor ->
+                val columns = columnNames(cursor)
+                assertTrue(columns.contains("remoteId"))
+            }
+            db.query("PRAGMA table_info(messages)").use { cursor ->
+                val columns = columnNames(cursor)
+                assertTrue(columns.contains("remoteId"))
+                assertTrue(columns.contains("syncState"))
+            }
+            db.query("PRAGMA table_info(orders)").use { cursor ->
+                val columns = columnNames(cursor)
+                assertTrue(columns.contains("remoteId"))
+                assertTrue(columns.contains("syncState"))
+            }
+            db.query("SELECT syncState FROM messages WHERE id = 1").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals("SYNCED", cursor.getString(0))
+            }
+        }
+    }
+
+    @Test
     fun migrate9To10_addsUserIdToCartAndFavorites() {
         openDatabase(version = 9, onCreate = { db ->
             db.execSQL(
@@ -176,6 +228,66 @@ class DatabaseMigrationTest {
                 sellerId TEXT NOT NULL,
                 createdAt INTEGER NOT NULL,
                 updatedAt INTEGER NOT NULL
+            )
+            """.trimIndent(),
+        )
+    }
+
+    private fun columnNames(cursor: android.database.Cursor): List<String> {
+        val columns = mutableListOf<String>()
+        while (cursor.moveToNext()) {
+            columns += cursor.getString(cursor.getColumnIndexOrThrow("name"))
+        }
+        return columns
+    }
+
+    private fun createV10Conversation(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE conversations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                productId INTEGER NOT NULL,
+                productTitle TEXT NOT NULL,
+                productImageUrl TEXT NOT NULL,
+                sellerId TEXT NOT NULL,
+                sellerDisplayName TEXT NOT NULL,
+                buyerId TEXT NOT NULL,
+                buyerDisplayName TEXT NOT NULL,
+                lastMessagePreview TEXT NOT NULL,
+                lastMessageAt INTEGER NOT NULL,
+                unreadCount INTEGER NOT NULL,
+                sellerUnreadCount INTEGER NOT NULL,
+                createdAt INTEGER NOT NULL
+            )
+            """.trimIndent(),
+        )
+    }
+
+    private fun createV10Message(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                conversationId INTEGER NOT NULL,
+                senderId TEXT NOT NULL,
+                body TEXT NOT NULL,
+                status TEXT NOT NULL,
+                sentAt INTEGER,
+                isRead INTEGER NOT NULL
+            )
+            """.trimIndent(),
+        )
+    }
+
+    private fun createV10Order(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE orders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                guestId TEXT NOT NULL,
+                totalAmount REAL NOT NULL,
+                status TEXT NOT NULL,
+                createdAt INTEGER NOT NULL
             )
             """.trimIndent(),
         )

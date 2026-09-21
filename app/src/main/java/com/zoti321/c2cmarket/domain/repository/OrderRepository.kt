@@ -23,4 +23,8 @@ interface OrderRepository {
     suspend fun confirmMeetupAsSeller(orderId: Long): Result<Unit>
 
     suspend fun cancelOrderAsSeller(orderId: Long): Result<Unit>
+
+    suspend fun resolveLocalId(remoteOrderId: String): Long?
+
+    suspend fun retryPendingUploads()
 }

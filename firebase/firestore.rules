@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function businessUserId() {
+      return get(/databases/$(database)/documents/userMappings/$(request.auth.uid)).data.businessUserId;
+    }
+
+    match /userMappings/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+
+      match /fcmTokens/{tokenHash} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+      }
+    }
+
+    match /conversations/{convId} {
+      allow read: if isSignedIn() &&
+        (resource.data.buyerId == businessUserId() || resource.data.sellerId == businessUserId());
+      allow create: if isSignedIn() &&
+        (request.resource.data.buyerId == businessUserId() ||
+         request.resource.data.sellerId == businessUserId());
+      allow update: if isSignedIn() &&
+        (resource.data.buyerId == businessUserId() || resource.data.sellerId == businessUserId());
+
+      match /messages/{msgId} {
+        allow read: if isSignedIn() &&
+          (get(/databases/$(database)/documents/conversations/$(convId)).data.buyerId == businessUserId() ||
+           get(/databases/$(database)/documents/conversations/$(convId)).data.sellerId == businessUserId());
+        allow create: if isSignedIn() &&
+          request.resource.data.senderId == businessUserId();
+        allow update: if false;
+      }
+    }
+
+    match /listings/{catalogId} {
+      allow read: if isSignedIn() &&
+        (resource.data.status == 'AVAILABLE' || resource.data.sellerId == businessUserId());
+      allow create, update: if isSignedIn() &&
+        request.resource.data.sellerId == businessUserId();
+      allow delete: if isSignedIn() && resource.data.sellerId == businessUserId();
+    }
+
+    match /orders/{orderId} {
+      allow read: if isSignedIn() &&
+        (resource.data.buyerId == businessUserId() || resource.data.sellerId == businessUserId());
+      allow create: if isSignedIn() &&
+        request.resource.data.buyerId == businessUserId();
+      allow update: if isSignedIn() &&
+        (resource.data.buyerId == businessUserId() || resource.data.sellerId == businessUserId());
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -22,6 +22,10 @@ jobs:
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
       - run: chmod +x gradlew
+      - name: Prepare CI Firebase stub
+        run: |
+          bash scripts/generate-ci-google-services.sh
+          echo "google.web_client_id=ci-placeholder.apps.googleusercontent.com" >> local.properties
       - name: Android Lint
         run: ./gradlew lintDebug --no-configuration-cache
       - name: Detekt
@@ -43,6 +47,10 @@ jobs:
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
       - run: chmod +x gradlew
+      - name: Prepare CI Firebase stub
+        run: |
+          bash scripts/generate-ci-google-services.sh
+          echo "google.web_client_id=ci-placeholder.apps.googleusercontent.com" >> local.properties
       - run: ./gradlew test assembleDebug jacocoDebugUnitTestReport jacocoDebugUnitTestCoverageVerification --no-configuration-cache
       - uses: actions/upload-artifact@v4
         if: always()
@@ -88,6 +96,8 @@ jobs:
           keyPassword=ci-release
           keyAlias=release
           EOF
-      - name: Prepare local.properties for CI
-        run: echo "google.web_client_id=ci-placeholder.apps.googleusercontent.com" >> local.properties
+      - name: Prepare CI Firebase stub
+        run: |
+          bash scripts/generate-ci-google-services.sh
+          echo "google.web_client_id=ci-placeholder.apps.googleusercontent.com" >> local.properties
       - run: ./gradlew assembleRelease --no-configuration-cache
