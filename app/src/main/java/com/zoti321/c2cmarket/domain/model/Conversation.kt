@@ -16,4 +16,5 @@ data class Conversation(
     /** 卖家视角未读数 */
     val sellerUnreadCount: Int,
     val createdAt: Long,
+    val remoteId: String? = null,
 )

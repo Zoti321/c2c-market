@@ -127,4 +127,8 @@ private class FakeOrderDetailRepository(
     override suspend fun confirmMeetupAsSeller(orderId: Long): Result<Unit> = Result.success(Unit)
 
     override suspend fun cancelOrderAsSeller(orderId: Long): Result<Unit> = Result.success(Unit)
+
+    override suspend fun resolveLocalId(remoteOrderId: String): Long? = null
+
+    override suspend fun retryPendingUploads() = Unit
 }

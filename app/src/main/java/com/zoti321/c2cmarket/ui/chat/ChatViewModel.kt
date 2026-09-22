@@ -66,6 +66,7 @@ class ChatViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
 
     init {
+        chatRepository.startActiveConversationSync(conversationId)
         viewModelScope.launch {
             chatRepository.markConversationRead(conversationId)
         }
@@ -111,6 +112,11 @@ class ChatViewModel @Inject constructor(
         if (text.length <= MAX_INPUT_LENGTH) {
             _inputText.value = text
         }
+    }
+
+    override fun onCleared() {
+        chatRepository.stopActiveConversationSync()
+        super.onCleared()
     }
 
     fun sendMessage() {

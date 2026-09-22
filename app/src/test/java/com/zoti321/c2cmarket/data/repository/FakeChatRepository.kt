@@ -72,6 +72,14 @@ class FakeChatRepository(
     override fun observeDraft(conversationId: Long): Flow<String> =
         draftsState.map { it[conversationId].orEmpty() }
 
+    override suspend fun resolveLocalConversationId(remoteId: String): Long? = null
+
+    override fun startActiveConversationSync(conversationId: Long) = Unit
+
+    override fun stopActiveConversationSync() = Unit
+
+    override suspend fun retryPendingUploads() = Unit
+
     fun setConversations(conversations: List<Conversation>) {
         buyerConversationsState.value = conversations
     }

@@ -11,6 +11,7 @@ import com.zoti321.c2cmarket.domain.model.Rating
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestCoroutineScheduler
@@ -45,12 +46,12 @@ class ChatRepositoryImplTest {
         database = InMemoryDatabaseFactory.create()
         testScope = CoroutineScope(SupervisorJob() + testDispatcher)
         val context = ApplicationProvider.getApplicationContext<Application>()
-        repository = ChatRepositoryImpl(
+        repository = createChatRepository(
             database = database,
             authRepository = FakeAuthRepository(),
-            context = context,
             applicationScope = testScope,
             ioDispatcher = testDispatcher,
+            context = context,
         )
     }
 
@@ -154,6 +155,8 @@ class ChatRepositoryImplTest {
         repository.sendMessage(conversation.id, "hello").getOrThrow()
         advanceTimeBy(ChatRepositoryImpl.MOCK_SELLER_REPLY_DELAY_MS)
         advanceUntilIdle()
+        // Room 查询在测试调度器之外执行，等到模拟回复任务结束再读库。
+        testScope.coroutineContext.job.children.toList().forEach { it.join() }
 
         val messages = repository.observeMessages(conversation.id).first()
         assertEquals(2, messages.size)
@@ -169,21 +172,11 @@ class ChatRepositoryImplTest {
     fun sellerSendMessage_incrementsBuyerUnread() = runTest(testScheduler) {
         val sellerId = "google:seller-1"
         val auth = FakeAuthRepository(initialUserId = sellerId)
-        val sellerRepo = ChatRepositoryImpl(
-            database = database,
-            authRepository = auth,
-            context = ApplicationProvider.getApplicationContext(),
-            applicationScope = testScope,
-            ioDispatcher = StandardTestDispatcher(testScheduler),
-        )
+        val context = ApplicationProvider.getApplicationContext<Application>()
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val sellerRepo = createChatRepository(database, auth, testScope, dispatcher, context)
         val buyerAuth = FakeAuthRepository()
-        val buyerRepo = ChatRepositoryImpl(
-            database = database,
-            authRepository = buyerAuth,
-            context = ApplicationProvider.getApplicationContext(),
-            applicationScope = testScope,
-            ioDispatcher = StandardTestDispatcher(testScheduler),
-        )
+        val buyerRepo = createChatRepository(database, buyerAuth, testScope, dispatcher, context)
         val listingProduct = localListingProduct()
         database.listingDao().insert(
             com.zoti321.c2cmarket.data.local.entity.ListingEntity(
@@ -212,21 +205,11 @@ class ChatRepositoryImplTest {
     fun sellerSendMessage_doesNotTriggerMockReply() = runTest(testScheduler) {
         val sellerId = "google:seller-1"
         val auth = FakeAuthRepository(initialUserId = sellerId)
-        val sellerRepo = ChatRepositoryImpl(
-            database = database,
-            authRepository = auth,
-            context = ApplicationProvider.getApplicationContext(),
-            applicationScope = testScope,
-            ioDispatcher = StandardTestDispatcher(testScheduler),
-        )
+        val context = ApplicationProvider.getApplicationContext<Application>()
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val sellerRepo = createChatRepository(database, auth, testScope, dispatcher, context)
         val buyerAuth = FakeAuthRepository()
-        val buyerRepo = ChatRepositoryImpl(
-            database = database,
-            authRepository = buyerAuth,
-            context = ApplicationProvider.getApplicationContext(),
-            applicationScope = testScope,
-            ioDispatcher = StandardTestDispatcher(testScheduler),
-        )
+        val buyerRepo = createChatRepository(database, buyerAuth, testScope, dispatcher, context)
         val listingProduct = localListingProduct()
         database.listingDao().insert(
             com.zoti321.c2cmarket.data.local.entity.ListingEntity(
@@ -256,21 +239,11 @@ class ChatRepositoryImplTest {
     fun observeConversationsAsSeller_returnsSellerInbox() = runTest(testScheduler) {
         val sellerId = "google:seller-1"
         val buyerAuth = FakeAuthRepository()
-        val buyerRepo = ChatRepositoryImpl(
-            database = database,
-            authRepository = buyerAuth,
-            context = ApplicationProvider.getApplicationContext(),
-            applicationScope = testScope,
-            ioDispatcher = StandardTestDispatcher(testScheduler),
-        )
+        val context = ApplicationProvider.getApplicationContext<Application>()
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val buyerRepo = createChatRepository(database, buyerAuth, testScope, dispatcher, context)
         val sellerAuth = FakeAuthRepository(initialUserId = sellerId)
-        val sellerRepo = ChatRepositoryImpl(
-            database = database,
-            authRepository = sellerAuth,
-            context = ApplicationProvider.getApplicationContext(),
-            applicationScope = testScope,
-            ioDispatcher = StandardTestDispatcher(testScheduler),
-        )
+        val sellerRepo = createChatRepository(database, sellerAuth, testScope, dispatcher, context)
         val listingProduct = localListingProduct()
         database.listingDao().insert(
             com.zoti321.c2cmarket.data.local.entity.ListingEntity(

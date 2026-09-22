@@ -8,11 +8,15 @@ import com.zoti321.c2cmarket.data.auth.GoogleCredentialDataSource
 import com.zoti321.c2cmarket.data.auth.clearSession
 import com.zoti321.c2cmarket.data.auth.observeAuthState
 import com.zoti321.c2cmarket.data.auth.saveProfile
+import com.zoti321.c2cmarket.data.firebase.FirebaseAuthGateway
+import com.zoti321.c2cmarket.data.firebase.UserMappingGateway
 import com.zoti321.c2cmarket.data.migration.GuestDataMigration
+import com.zoti321.c2cmarket.data.sync.RemoteSyncGateway
 import com.zoti321.c2cmarket.domain.model.AuthState
 import com.zoti321.c2cmarket.domain.model.UserIds
 import com.zoti321.c2cmarket.domain.model.UserProfile
 import com.zoti321.c2cmarket.domain.repository.AuthRepository
+import dagger.Lazy
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -23,6 +27,9 @@ class AuthRepositoryImpl @Inject constructor(
     private val dataStore: DataStore<Preferences>,
     private val googleCredentialDataSource: GoogleCredentialDataSource,
     private val guestDataMigration: GuestDataMigration,
+    private val firebaseAuthGateway: FirebaseAuthGateway,
+    private val userMappingGateway: UserMappingGateway,
+    private val remoteSyncGateway: Lazy<RemoteSyncGateway>,
 ) : AuthRepository {
 
     override fun observeAuthState(): Flow<AuthState> = dataStore.observeAuthState()
@@ -38,6 +45,7 @@ class AuthRepositoryImpl @Inject constructor(
         val signInResult = googleCredentialDataSource
             .signIn(activity, BuildConfig.GOOGLE_WEB_CLIENT_ID)
             .getOrThrow()
+        firebaseAuthGateway.signInWithGoogleIdToken(signInResult.idToken).getOrThrow()
         val profile = UserProfile(
             userId = UserIds.google(signInResult.sub),
             displayName = signInResult.displayName.ifBlank { "Google 用户" },
@@ -45,11 +53,14 @@ class AuthRepositoryImpl @Inject constructor(
             photoUrl = signInResult.photoUrl,
         )
         dataStore.saveProfile(profile)
+        userMappingGateway.upsertBusinessUserId(profile.userId).getOrThrow()
         guestDataMigration.migrateGuestDataTo(profile.userId)
         profile
     }
 
     override suspend fun signOut() {
+        remoteSyncGateway.get().unregisterFcmToken()
+        firebaseAuthGateway.signOut()
         dataStore.clearSession()
     }
 }

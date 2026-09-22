@@ -30,6 +30,14 @@
 # Coil
 -dontwarn coil3.**
 
+# Firebase
+-keep class com.google.firebase.** { *; }
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.firebase.**
+
+# FirebaseMessagingService
+-keep class com.zoti321.c2cmarket.notification.C2CFirebaseMessagingService { *; }
+
 # Credential Manager + Google Sign-In
 -dontwarn androidx.credentials.**
 -keep class androidx.credentials.** { *; }

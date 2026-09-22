@@ -187,4 +187,12 @@ private class NoOpChatRepository : ChatRepository {
     override suspend fun markConversationRead(conversationId: Long) = Unit
 
     override fun observeDraft(conversationId: Long): Flow<String> = flowOf("")
+
+    override suspend fun resolveLocalConversationId(remoteId: String): Long? = null
+
+    override fun startActiveConversationSync(conversationId: Long) = Unit
+
+    override fun stopActiveConversationSync() = Unit
+
+    override suspend fun retryPendingUploads() = Unit
 }

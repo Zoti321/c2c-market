@@ -75,4 +75,16 @@ interface OrderDao {
 
     @Query("UPDATE orders SET sellerMeetupConfirmed = 1 WHERE id = :orderId")
     suspend fun setSellerMeetupConfirmed(orderId: Long)
+
+    @Query("SELECT * FROM orders WHERE remoteId = :remoteId LIMIT 1")
+    suspend fun findByRemoteId(remoteId: String): OrderEntity?
+
+    @Query("SELECT * FROM orders WHERE syncState = 'PENDING'")
+    suspend fun getPendingOrders(): List<OrderEntity>
+
+    @Query("UPDATE orders SET remoteId = :remoteId, syncState = :syncState WHERE id = :id")
+    suspend fun updateRemoteSync(id: Long, remoteId: String, syncState: String)
+
+    @Query("UPDATE orders SET remoteId = :remoteId WHERE id = :id")
+    suspend fun updateRemoteId(id: Long, remoteId: String)
 }

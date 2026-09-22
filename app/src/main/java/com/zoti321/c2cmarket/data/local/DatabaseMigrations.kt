@@ -187,6 +187,28 @@ val MIGRATION_9_10 = object : Migration(9, 10) {
     }
 }
 
+val MIGRATION_11_12 = object : Migration(11, 12) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.recreateOrders()
+        db.recreateListings()
+        db.recreateConversations()
+        db.recreateMessages()
+    }
+}
+
+val MIGRATION_10_11 = object : Migration(10, 11) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE conversations ADD COLUMN remoteId TEXT")
+        db.execSQL("ALTER TABLE messages ADD COLUMN remoteId TEXT")
+        db.execSQL("ALTER TABLE messages ADD COLUMN syncState TEXT NOT NULL DEFAULT 'SYNCED'")
+        db.execSQL("ALTER TABLE orders ADD COLUMN remoteId TEXT")
+        db.execSQL("ALTER TABLE orders ADD COLUMN syncState TEXT NOT NULL DEFAULT 'SYNCED'")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_conversations_remoteId ON conversations(remoteId)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_messages_remoteId ON messages(remoteId)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_orders_remoteId ON orders(remoteId)")
+    }
+}
+
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL(
@@ -218,4 +240,144 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
             "CREATE INDEX IF NOT EXISTS index_order_line_items_orderId ON order_line_items(orderId)",
         )
     }
+}
+
+private fun SupportSQLiteDatabase.recreateOrders() {
+    recreateTable(
+        table = "orders",
+        createSql = """
+            CREATE TABLE orders_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                guestId TEXT NOT NULL,
+                totalAmount REAL NOT NULL,
+                status TEXT NOT NULL,
+                createdAt INTEGER NOT NULL,
+                shippingReceiverName TEXT,
+                shippingPhone TEXT,
+                shippingAddress TEXT,
+                meetupLocation TEXT,
+                buyerMeetupConfirmed INTEGER NOT NULL DEFAULT 0,
+                sellerMeetupConfirmed INTEGER NOT NULL DEFAULT 0,
+                remoteId TEXT,
+                syncState TEXT NOT NULL DEFAULT 'SYNCED'
+            )
+        """.trimIndent(),
+        columns = """
+            id, guestId, totalAmount, status, createdAt, shippingReceiverName, shippingPhone,
+            shippingAddress, meetupLocation, buyerMeetupConfirmed, sellerMeetupConfirmed,
+            remoteId, syncState
+        """.trimIndent(),
+        indexSql = listOf(
+            "CREATE INDEX IF NOT EXISTS index_orders_remoteId ON orders(remoteId)",
+        ),
+    )
+}
+
+private fun SupportSQLiteDatabase.recreateListings() {
+    recreateTable(
+        table = "listings",
+        createSql = """
+            CREATE TABLE listings_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                catalogId INTEGER NOT NULL,
+                title TEXT NOT NULL,
+                price REAL NOT NULL,
+                description TEXT NOT NULL,
+                category TEXT NOT NULL,
+                imageUri TEXT NOT NULL,
+                sellerId TEXT NOT NULL DEFAULT 'guest',
+                meetupLocation TEXT,
+                status TEXT NOT NULL DEFAULT 'AVAILABLE',
+                createdAt INTEGER NOT NULL,
+                updatedAt INTEGER NOT NULL
+            )
+        """.trimIndent(),
+        columns = """
+            id, catalogId, title, price, description, category, imageUri, sellerId,
+            meetupLocation, status, createdAt, updatedAt
+        """.trimIndent(),
+        indexSql = listOf(
+            "CREATE UNIQUE INDEX IF NOT EXISTS index_listings_catalogId ON listings(catalogId)",
+        ),
+    )
+}
+
+private fun SupportSQLiteDatabase.recreateConversations() {
+    recreateTable(
+        table = "conversations",
+        createSql = """
+            CREATE TABLE conversations_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                productId INTEGER NOT NULL,
+                productTitle TEXT NOT NULL,
+                productImageUrl TEXT NOT NULL,
+                sellerId TEXT NOT NULL,
+                sellerDisplayName TEXT NOT NULL,
+                buyerId TEXT NOT NULL,
+                buyerDisplayName TEXT NOT NULL DEFAULT '游客',
+                lastMessagePreview TEXT NOT NULL,
+                lastMessageAt INTEGER NOT NULL,
+                unreadCount INTEGER NOT NULL,
+                sellerUnreadCount INTEGER NOT NULL DEFAULT 0,
+                createdAt INTEGER NOT NULL,
+                remoteId TEXT
+            )
+        """.trimIndent(),
+        columns = """
+            id, productId, productTitle, productImageUrl, sellerId, sellerDisplayName, buyerId,
+            buyerDisplayName, lastMessagePreview, lastMessageAt, unreadCount, sellerUnreadCount,
+            createdAt, remoteId
+        """.trimIndent(),
+        indexSql = listOf(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS index_conversations_buyerId_sellerId_productId
+            ON conversations(buyerId, sellerId, productId)
+            """.trimIndent(),
+            "CREATE INDEX IF NOT EXISTS index_conversations_remoteId ON conversations(remoteId)",
+        ),
+    )
+}
+
+private fun SupportSQLiteDatabase.recreateMessages() {
+    recreateTable(
+        table = "messages",
+        createSql = """
+            CREATE TABLE messages_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                conversationId INTEGER NOT NULL,
+                senderId TEXT NOT NULL,
+                body TEXT NOT NULL,
+                status TEXT NOT NULL,
+                sentAt INTEGER,
+                isRead INTEGER NOT NULL,
+                remoteId TEXT,
+                syncState TEXT NOT NULL DEFAULT 'SYNCED',
+                FOREIGN KEY(conversationId) REFERENCES conversations(id)
+                    ON UPDATE NO ACTION ON DELETE CASCADE
+            )
+        """.trimIndent(),
+        columns = """
+            id, conversationId, senderId, body, status, sentAt, isRead, remoteId, syncState
+        """.trimIndent(),
+        indexSql = listOf(
+            """
+            CREATE INDEX IF NOT EXISTS index_messages_conversationId_status
+            ON messages(conversationId, status)
+            """.trimIndent(),
+            "CREATE INDEX IF NOT EXISTS index_messages_remoteId ON messages(remoteId)",
+        ),
+    )
+}
+
+private fun SupportSQLiteDatabase.recreateTable(
+    table: String,
+    createSql: String,
+    columns: String,
+    indexSql: List<String>,
+) {
+    execSQL(createSql)
+    execSQL("INSERT INTO ${table}_new ($columns) SELECT $columns FROM $table")
+    execSQL("DROP TABLE $table")
+    execSQL("ALTER TABLE ${table}_new RENAME TO $table")
+    indexSql.forEach(::execSQL)
 }

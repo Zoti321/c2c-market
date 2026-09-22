@@ -3,6 +3,7 @@ package com.zoti321.c2cmarket.data.repository
 import com.zoti321.c2cmarket.data.local.InMemoryDatabaseFactory
 import com.zoti321.c2cmarket.data.local.entity.FavoriteEntity
 import com.zoti321.c2cmarket.domain.model.ListingInput
+import com.zoti321.c2cmarket.domain.model.ListingStatus
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -21,17 +22,16 @@ class ListingRepositoryImplTest {
 
     private lateinit var database: com.zoti321.c2cmarket.data.local.C2CDatabase
     private lateinit var repository: ListingRepositoryImpl
+    private lateinit var deps: RepositoryTestDeps
 
     @Before
     fun setUp() {
         database = InMemoryDatabaseFactory.create()
-        repository = ListingRepositoryImpl(
+        deps = createRepositoryTestDeps()
+        repository = createListingRepository(
             database = database,
-            listingDao = database.listingDao(),
-            cartDao = database.cartDao(),
-            favoriteDao = database.favoriteDao(),
-            orderDao = database.orderDao(),
             authRepository = FakeAuthRepository(),
+            deps = deps,
         )
     }
 
@@ -41,7 +41,7 @@ class ListingRepositoryImplTest {
     }
 
     @Test
-    fun create_assignsNegativeCatalogIds() = runTest {
+    fun create_assignsNegativeCatalogIds() = runTest(deps.dispatcher) {
         val first = repository.create(validInput("First")).getOrThrow()
         val second = repository.create(validInput("Second")).getOrThrow()
 
@@ -50,7 +50,7 @@ class ListingRepositoryImplTest {
     }
 
     @Test
-    fun delete_removesCartAndFavoriteRows() = runTest {
+    fun delete_removesCartAndFavoriteRows() = runTest(deps.dispatcher) {
         val listing = repository.create(validInput("Delete Me")).getOrThrow()
         database.cartDao().insert(
             com.zoti321.c2cmarket.data.local.entity.CartItemEntity(
@@ -73,7 +73,7 @@ class ListingRepositoryImplTest {
     }
 
     @Test
-    fun create_persistsMeetupLocation() = runTest {
+    fun create_persistsMeetupLocation() = runTest(deps.dispatcher) {
         val listing = repository.create(
             validInput("Meetup Item").copy(meetupLocation = "深圳湾公园"),
         ).getOrThrow()
@@ -85,7 +85,7 @@ class ListingRepositoryImplTest {
     }
 
     @Test
-    fun observeByCategory_filtersListings() = runTest {
+    fun observeByCategory_filtersListings() = runTest(deps.dispatcher) {
         repository.create(validInput("Phone", category = "electronics"))
         repository.create(validInput("Ring", category = "jewelery"))
 
@@ -96,19 +96,19 @@ class ListingRepositoryImplTest {
     }
 
     @Test
-    fun updateStatus_changesListingStatus() = runTest {
+    fun updateStatus_changesListingStatus() = runTest(deps.dispatcher) {
         val listing = repository.create(validInput("Status Item")).getOrThrow()
 
-        repository.updateStatus(listing.id, com.zoti321.c2cmarket.domain.model.ListingStatus.SOLD)
+        repository.updateStatus(listing.id, ListingStatus.SOLD)
 
         val stored = database.listingDao().getByCatalogId(listing.id)
         assertEquals("SOLD", stored?.status)
     }
 
     @Test
-    fun observeAsProducts_excludesSoldListings() = runTest {
+    fun observeAsProducts_excludesSoldListings() = runTest(deps.dispatcher) {
         val listing = repository.create(validInput("Hidden When Sold")).getOrThrow()
-        repository.updateStatus(listing.id, com.zoti321.c2cmarket.domain.model.ListingStatus.SOLD)
+        repository.updateStatus(listing.id, ListingStatus.SOLD)
 
         val public = repository.observeAsProducts().first()
 
@@ -116,27 +116,27 @@ class ListingRepositoryImplTest {
     }
 
     @Test
-    fun markReservedForCheckout_updatesAvailableListing() = runTest {
+    fun markReservedForCheckout_updatesAvailableListing() = runTest(deps.dispatcher) {
         val listing = repository.create(validInput("Checkout Item")).getOrThrow()
 
         repository.markReservedForCheckout(listOf(listing.id))
 
         val stored = database.listingDao().getByCatalogId(listing.id)
-        assertEquals(com.zoti321.c2cmarket.domain.model.ListingStatus.RESERVED.name, stored?.status)
+        assertEquals(ListingStatus.RESERVED.name, stored?.status)
     }
 
     @Test
-    fun updateStatus_canMarkRemoved() = runTest {
+    fun updateStatus_canMarkRemoved() = runTest(deps.dispatcher) {
         val listing = repository.create(validInput("Removed Item")).getOrThrow()
 
-        repository.updateStatus(listing.id, com.zoti321.c2cmarket.domain.model.ListingStatus.REMOVED)
+        repository.updateStatus(listing.id, ListingStatus.REMOVED)
 
         val stored = database.listingDao().getByCatalogId(listing.id)
         assertEquals("REMOVED", stored?.status)
     }
 
     @Test
-    fun delete_reservedListing_fails() = runTest {
+    fun delete_reservedListing_fails() = runTest(deps.dispatcher) {
         val listing = repository.create(validInput("Reserved Item")).getOrThrow()
         database.listingDao().updateStatus(listing.id, "RESERVED", System.currentTimeMillis())
 
@@ -150,6 +150,6 @@ class ListingRepositoryImplTest {
         price = 9.99,
         description = "Test listing",
         category = category,
-        imageUri = "content://test/image",
+        imageUri = "https://example.com/test.jpg",
     )
 }

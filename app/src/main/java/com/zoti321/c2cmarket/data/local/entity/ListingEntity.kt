@@ -1,5 +1,6 @@
 package com.zoti321.c2cmarket.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -16,8 +17,10 @@ data class ListingEntity(
     val description: String,
     val category: String,
     val imageUri: String,
+    @ColumnInfo(defaultValue = "'guest'")
     val sellerId: String = "guest",
     val meetupLocation: String? = null,
+    @ColumnInfo(defaultValue = "'AVAILABLE'")
     val status: String = "AVAILABLE",
     val createdAt: Long,
     val updatedAt: Long,

@@ -53,6 +53,15 @@ interface MessageDao {
         """,
     )
     suspend fun markOtherPartyMessagesRead(conversationId: Long, currentUserId: String)
+
+    @Query("SELECT * FROM messages WHERE remoteId = :remoteId LIMIT 1")
+    suspend fun findByRemoteId(remoteId: String): MessageEntity?
+
+    @Query("SELECT * FROM messages WHERE syncState = 'PENDING'")
+    suspend fun getPendingMessages(): List<MessageEntity>
+
+    @Query("UPDATE messages SET remoteId = :remoteId, syncState = :syncState WHERE id = :id")
+    suspend fun updateRemoteSync(id: Long, remoteId: String, syncState: String)
 }
 
 fun MessageDao.observeDraft(conversationId: Long): Flow<String> =

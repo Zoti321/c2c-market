@@ -5,6 +5,7 @@ import com.zoti321.c2cmarket.domain.model.OrderSummary
 import com.zoti321.c2cmarket.domain.model.ShippingInfo
 import kotlinx.coroutines.flow.Flow
 
+@Suppress("TooManyFunctions")
 interface OrderRepository {
     suspend fun placeOrder(shipping: ShippingInfo): Result<Order>
 
@@ -23,4 +24,8 @@ interface OrderRepository {
     suspend fun confirmMeetupAsSeller(orderId: Long): Result<Unit>
 
     suspend fun cancelOrderAsSeller(orderId: Long): Result<Unit>
+
+    suspend fun resolveLocalId(remoteOrderId: String): Long?
+
+    suspend fun retryPendingUploads()
 }

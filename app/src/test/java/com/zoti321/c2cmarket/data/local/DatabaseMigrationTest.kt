@@ -1,15 +1,18 @@
 package com.zoti321.c2cmarket.data.local
 
 import android.content.Context
+import androidx.room.Room
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.core.app.ApplicationProvider
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
@@ -77,6 +80,94 @@ class DatabaseMigrationTest {
     }
 
     @Test
+    fun migrate10To11_addsRemoteSyncColumns() {
+        openDatabase(version = 10, onCreate = { db ->
+            createV10Conversation(db)
+            createV10Message(db)
+            createV10Order(db)
+            db.execSQL(
+                """
+                INSERT INTO conversations (
+                    id, productId, productTitle, productImageUrl, sellerId, sellerDisplayName,
+                    buyerId, buyerDisplayName, lastMessagePreview, lastMessageAt, unreadCount,
+                    sellerUnreadCount, createdAt
+                ) VALUES (1, 1, 'P', 'img', 'seller', '卖家', 'guest', '游客', '', 1, 0, 0, 1)
+                """.trimIndent(),
+            )
+            db.execSQL(
+                """
+                INSERT INTO messages (
+                    id, conversationId, senderId, body, status, sentAt, isRead
+                ) VALUES (1, 1, 'guest', 'hi', 'SENT', 1, 1)
+                """.trimIndent(),
+            )
+            db.execSQL(
+                """
+                INSERT INTO orders (id, guestId, totalAmount, status, createdAt)
+                VALUES (1, 'guest', 10.0, 'COMPLETED', 1)
+                """.trimIndent(),
+            )
+        }).use { db ->
+            MIGRATION_10_11.migrate(db)
+
+            db.query("PRAGMA table_info(conversations)").use { cursor ->
+                val columns = columnNames(cursor)
+                assertTrue(columns.contains("remoteId"))
+            }
+            db.query("PRAGMA table_info(messages)").use { cursor ->
+                val columns = columnNames(cursor)
+                assertTrue(columns.contains("remoteId"))
+                assertTrue(columns.contains("syncState"))
+            }
+            db.query("PRAGMA table_info(orders)").use { cursor ->
+                val columns = columnNames(cursor)
+                assertTrue(columns.contains("remoteId"))
+                assertTrue(columns.contains("syncState"))
+            }
+            db.query("SELECT syncState FROM messages WHERE id = 1").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals("SYNCED", cursor.getString(0))
+            }
+        }
+    }
+
+    @Test
+    fun migrate8To12_matchesEntitySchema() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val name = "migrate-8-12"
+        context.deleteDatabase(name)
+        openDatabase(version = 8, name = name) { db -> createFromExportedSchema(db, 8) }.close()
+        val database = Room.databaseBuilder(context, C2CDatabase::class.java, name)
+            .addMigrations(MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            database.openHelper.writableDatabase.query("SELECT COUNT(*) FROM orders").close()
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
+    fun migrate11To12_addsMissingColumnDefaults() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val name = "migrate-11-12"
+        context.deleteDatabase(name)
+        openDatabase(version = 11, name = name) { db -> createFromExportedSchema(db, 11) }.close()
+        val database = Room.databaseBuilder(context, C2CDatabase::class.java, name)
+            .addMigrations(MIGRATION_11_12)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            database.openHelper.writableDatabase.query(
+                "SELECT buyerMeetupConfirmed, syncState FROM orders",
+            ).close()
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
     fun migrate9To10_addsUserIdToCartAndFavorites() {
         openDatabase(version = 9, onCreate = { db ->
             db.execSQL(
@@ -125,11 +216,12 @@ class DatabaseMigrationTest {
 
     private fun openDatabase(
         version: Int,
+        name: String = "migration-test-$version.db",
         onCreate: (SupportSQLiteDatabase) -> Unit,
     ): SupportSQLiteDatabase {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val config = androidx.sqlite.db.SupportSQLiteOpenHelper.Configuration.builder(context)
-            .name("migration-test-$version.db")
+            .name(name)
             .callback(object : androidx.sqlite.db.SupportSQLiteOpenHelper.Callback(version) {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     onCreate(db)
@@ -179,6 +271,90 @@ class DatabaseMigrationTest {
             )
             """.trimIndent(),
         )
+    }
+
+    private fun columnNames(cursor: android.database.Cursor): List<String> {
+        val columns = mutableListOf<String>()
+        while (cursor.moveToNext()) {
+            columns += cursor.getString(cursor.getColumnIndexOrThrow("name"))
+        }
+        return columns
+    }
+
+    private fun createV10Conversation(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE conversations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                productId INTEGER NOT NULL,
+                productTitle TEXT NOT NULL,
+                productImageUrl TEXT NOT NULL,
+                sellerId TEXT NOT NULL,
+                sellerDisplayName TEXT NOT NULL,
+                buyerId TEXT NOT NULL,
+                buyerDisplayName TEXT NOT NULL,
+                lastMessagePreview TEXT NOT NULL,
+                lastMessageAt INTEGER NOT NULL,
+                unreadCount INTEGER NOT NULL,
+                sellerUnreadCount INTEGER NOT NULL,
+                createdAt INTEGER NOT NULL
+            )
+            """.trimIndent(),
+        )
+    }
+
+    private fun createV10Message(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                conversationId INTEGER NOT NULL,
+                senderId TEXT NOT NULL,
+                body TEXT NOT NULL,
+                status TEXT NOT NULL,
+                sentAt INTEGER,
+                isRead INTEGER NOT NULL
+            )
+            """.trimIndent(),
+        )
+    }
+
+    private fun createV10Order(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE orders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                guestId TEXT NOT NULL,
+                totalAmount REAL NOT NULL,
+                status TEXT NOT NULL,
+                createdAt INTEGER NOT NULL
+            )
+            """.trimIndent(),
+        )
+    }
+
+    private fun createFromExportedSchema(db: SupportSQLiteDatabase, version: Int) {
+        val schema = JSONObject(schemaFile(version).readText())
+        val entities = schema.getJSONObject("database").getJSONArray("entities")
+        for (index in 0 until entities.length()) {
+            val entity = entities.getJSONObject(index)
+            val table = entity.getString("tableName")
+            db.execSQL(entity.getString("createSql").replace("\${TABLE_NAME}", table))
+            if (!entity.has("indices")) continue
+            val indices = entity.getJSONArray("indices")
+            for (indexIndex in 0 until indices.length()) {
+                db.execSQL(
+                    indices.getJSONObject(indexIndex)
+                        .getString("createSql")
+                        .replace("\${TABLE_NAME}", table),
+                )
+            }
+        }
+    }
+
+    private fun schemaFile(version: Int): File {
+        val relative = "schemas/com.zoti321.c2cmarket.data.local.C2CDatabase/$version.json"
+        return listOf(File(relative), File("app/$relative")).first { it.exists() }
     }
 
     private fun createV8Order(db: SupportSQLiteDatabase) {

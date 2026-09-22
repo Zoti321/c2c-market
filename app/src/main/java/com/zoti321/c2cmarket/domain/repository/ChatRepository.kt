@@ -5,6 +5,7 @@ import com.zoti321.c2cmarket.domain.model.Message
 import com.zoti321.c2cmarket.domain.model.Product
 import kotlinx.coroutines.flow.Flow
 
+@Suppress("TooManyFunctions")
 interface ChatRepository {
     fun observeConversationsAsBuyer(): Flow<List<Conversation>>
 
@@ -25,4 +26,12 @@ interface ChatRepository {
     suspend fun markConversationRead(conversationId: Long)
 
     fun observeDraft(conversationId: Long): Flow<String>
+
+    suspend fun resolveLocalConversationId(remoteId: String): Long?
+
+    fun startActiveConversationSync(conversationId: Long)
+
+    fun stopActiveConversationSync()
+
+    suspend fun retryPendingUploads()
 }

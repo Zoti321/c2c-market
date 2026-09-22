@@ -1,7 +1,9 @@
 package com.zoti321.c2cmarket.data.repository
 
+import android.net.Uri
 import androidx.room.withTransaction
 import com.zoti321.c2cmarket.data.error.InvalidListingException
+import com.zoti321.c2cmarket.data.firebase.FirebaseAuthGateway
 import com.zoti321.c2cmarket.data.local.C2CDatabase
 import com.zoti321.c2cmarket.data.local.dao.CartDao
 import com.zoti321.c2cmarket.data.local.dao.FavoriteDao
@@ -9,21 +11,27 @@ import com.zoti321.c2cmarket.data.local.dao.ListingDao
 import com.zoti321.c2cmarket.data.local.dao.OrderDao
 import com.zoti321.c2cmarket.data.mapper.toEntity
 import com.zoti321.c2cmarket.data.mapper.toProduct
+import com.zoti321.c2cmarket.di.IoDispatcher
+import com.zoti321.c2cmarket.domain.datasource.ListingRemoteDataSource
 import com.zoti321.c2cmarket.domain.error.ProductNotFoundException
 import com.zoti321.c2cmarket.domain.model.ListingInput
 import com.zoti321.c2cmarket.domain.model.ListingStatus
 import com.zoti321.c2cmarket.domain.model.Product
+import com.zoti321.c2cmarket.domain.model.UserIds
 import com.zoti321.c2cmarket.domain.repository.AuthRepository
 import com.zoti321.c2cmarket.domain.repository.ListingRepository
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Singleton
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LongParameterList")
 class ListingRepositoryImpl @Inject constructor(
     private val database: C2CDatabase,
     private val listingDao: ListingDao,
@@ -31,6 +39,9 @@ class ListingRepositoryImpl @Inject constructor(
     private val favoriteDao: FavoriteDao,
     private val orderDao: OrderDao,
     private val authRepository: AuthRepository,
+    private val listingRemote: ListingRemoteDataSource,
+    private val firebaseAuthGateway: FirebaseAuthGateway,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : ListingRepository {
 
     override fun observeAsProducts(): Flow<List<Product>> =
@@ -55,58 +66,84 @@ class ListingRepositoryImpl @Inject constructor(
     override suspend fun getSellerId(catalogId: Int): String? =
         listingDao.getByCatalogId(catalogId)?.sellerId
 
-    override suspend fun create(input: ListingInput): Result<Product> = runCatching {
-        validateListingInput(input)
-        val now = System.currentTimeMillis()
-        val catalogId = nextListingCatalogId(listingDao)
-        val sellerId = authRepository.currentUserId().first()
-        val entity = input.toEntity(catalogId, now, sellerId)
-        listingDao.insert(entity)
-        entity.toProduct()
-    }
-
-    override suspend fun update(catalogId: Int, input: ListingInput): Result<Product> = runCatching {
-        validateListingInput(input)
-        val existing = listingDao.getByCatalogId(catalogId)
-            ?: throw ProductNotFoundException(catalogId)
-        val now = System.currentTimeMillis()
-        val updated = existing.copy(
-            title = input.title.trim(),
-            price = input.price,
-            description = input.description.trim(),
-            category = input.category,
-            imageUri = input.imageUri,
-            meetupLocation = input.meetupLocation?.trim()?.takeIf { it.isNotEmpty() },
-            updatedAt = now,
-        )
-        listingDao.update(updated)
-        updated.toProduct()
-    }
-
-    override suspend fun delete(catalogId: Int): Result<Unit> = runCatching {
-        val existing = listingDao.getByCatalogId(catalogId)
-            ?: throw ProductNotFoundException(catalogId)
-        if (existing.status == ListingStatus.RESERVED.name) {
-            throw InvalidListingException("挂牌已有订单，请先取消订单")
-        }
-        database.withTransaction {
-            listingDao.deleteByCatalogId(catalogId)
-            cartDao.deleteByProductIdAllUsers(catalogId)
-            favoriteDao.deleteByProductIdAllUsers(catalogId)
+    override suspend fun create(input: ListingInput): Result<Product> = withContext(ioDispatcher) {
+        runCatching {
+            validateListingInput(input)
+            val now = System.currentTimeMillis()
+            val catalogId = nextListingCatalogId(listingDao)
+            val imageUri = resolveImageUri(input.imageUri, catalogId).getOrThrow()
+            val sellerId = authRepository.currentUserId().first()
+            val entity = input.copy(imageUri = imageUri).toEntity(catalogId, now, sellerId)
+            listingDao.insert(entity)
+            syncListingRemote(entity)
+            entity.toProduct()
         }
     }
 
-    override suspend fun updateStatus(catalogId: Int, status: ListingStatus): Result<Unit> = runCatching {
-        val existing = listingDao.getByCatalogId(catalogId)
-            ?: throw ProductNotFoundException(catalogId)
-        val sellerId = authRepository.currentUserId().first()
-        require(existing.sellerId == sellerId) { "Not listing owner" }
-        listingDao.updateStatus(catalogId, status.name, System.currentTimeMillis())
+    override suspend fun update(catalogId: Int, input: ListingInput): Result<Product> =
+        withContext(ioDispatcher) {
+            runCatching {
+                validateListingInput(input)
+                val existing = listingDao.getByCatalogId(catalogId)
+                    ?: throw ProductNotFoundException(catalogId)
+                val imageUri = resolveImageUri(input.imageUri, catalogId).getOrThrow()
+                val now = System.currentTimeMillis()
+                val updated = existing.copy(
+                    title = input.title.trim(),
+                    price = input.price,
+                    description = input.description.trim(),
+                    category = input.category,
+                    imageUri = imageUri,
+                    meetupLocation = input.meetupLocation?.trim()?.takeIf { it.isNotEmpty() },
+                    updatedAt = now,
+                )
+                listingDao.update(updated)
+                syncListingRemote(updated)
+                updated.toProduct()
+            }
+        }
+
+    override suspend fun delete(catalogId: Int): Result<Unit> = withContext(ioDispatcher) {
+        runCatching {
+            val existing = listingDao.getByCatalogId(catalogId)
+                ?: throw ProductNotFoundException(catalogId)
+            if (existing.status == ListingStatus.RESERVED.name) {
+                throw InvalidListingException("挂牌已有订单，请先取消订单")
+            }
+            if (shouldUseRemote()) {
+                listingRemote.deleteListingImage(catalogId)
+                listingRemote.deleteListing(catalogId)
+            }
+            database.withTransaction {
+                listingDao.deleteByCatalogId(catalogId)
+                cartDao.deleteByProductIdAllUsers(catalogId)
+                favoriteDao.deleteByProductIdAllUsers(catalogId)
+            }
+        }
     }
+
+    override suspend fun updateStatus(catalogId: Int, status: ListingStatus): Result<Unit> =
+        withContext(ioDispatcher) {
+            runCatching {
+                val existing = listingDao.getByCatalogId(catalogId)
+                    ?: throw ProductNotFoundException(catalogId)
+                val sellerId = authRepository.currentUserId().first()
+                require(existing.sellerId == sellerId) { "Not listing owner" }
+                listingDao.updateStatus(catalogId, status.name, System.currentTimeMillis())
+                if (shouldUseRemote()) {
+                    listingRemote.syncListingStatus(catalogId, status).getOrThrow()
+                }
+            }
+        }
 
     override suspend fun markReservedForCheckout(catalogIds: List<Int>) {
         if (catalogIds.isEmpty()) return
         listingDao.markReserved(catalogIds, System.currentTimeMillis())
+        if (shouldUseRemote()) {
+            catalogIds.forEach { catalogId ->
+                listingRemote.syncListingStatus(catalogId, ListingStatus.RESERVED)
+            }
+        }
     }
 
     override suspend fun markSoldForOrder(orderId: Long) {
@@ -114,6 +151,9 @@ class ListingRepositoryImpl @Inject constructor(
         val now = System.currentTimeMillis()
         catalogIds.forEach { catalogId ->
             listingDao.updateStatus(catalogId, ListingStatus.SOLD.name, now)
+            if (shouldUseRemote()) {
+                listingRemote.syncListingStatus(catalogId, ListingStatus.SOLD)
+            }
         }
     }
 
@@ -124,6 +164,9 @@ class ListingRepositoryImpl @Inject constructor(
             val listing = listingDao.getByCatalogId(catalogId) ?: return@forEach
             if (listing.status == ListingStatus.RESERVED.name) {
                 listingDao.updateStatus(catalogId, ListingStatus.AVAILABLE.name, now)
+                if (shouldUseRemote()) {
+                    listingRemote.syncListingStatus(catalogId, ListingStatus.AVAILABLE)
+                }
             }
         }
     }
@@ -135,6 +178,23 @@ class ListingRepositoryImpl @Inject constructor(
             .map { it.toProduct() }
             .filter { it.title.lowercase().contains(normalized) }
     }
+
+    private suspend fun resolveImageUri(imageUri: String, catalogId: Int?): Result<String> = when {
+        imageUri.startsWith("https://") || !imageUri.startsWith("content://") ->
+            Result.success(imageUri)
+        !shouldUseRemote() || catalogId == null ->
+            Result.failure(InvalidListingException("请先登录后再上传图片"))
+        else -> listingRemote.uploadListingImage(catalogId, Uri.parse(imageUri))
+    }
+
+    private suspend fun syncListingRemote(entity: com.zoti321.c2cmarket.data.local.entity.ListingEntity) {
+        if (!shouldUseRemote()) return
+        listingRemote.syncListing(entity)
+    }
+
+    private suspend fun shouldUseRemote(): Boolean =
+        firebaseAuthGateway.isSignedIn() &&
+            authRepository.currentUserId().first() != UserIds.GUEST
 }
 
 private suspend fun nextListingCatalogId(listingDao: ListingDao): Int {

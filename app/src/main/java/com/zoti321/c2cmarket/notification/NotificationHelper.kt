@@ -19,9 +19,10 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
+@Suppress("TooManyFunctions")
 class NotificationHelper @Inject constructor(
     @ApplicationContext private val context: Context,
-) {
+) : PushNotificationPresenter {
     fun hasNotificationPermission(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
         return ContextCompat.checkSelfPermission(
@@ -30,21 +31,29 @@ class NotificationHelper @Inject constructor(
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    fun ensureChannel() {
+    fun ensureChannels() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = context.getSystemService(NotificationManager::class.java)
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            context.getString(R.string.notification_channel_orders),
-            NotificationManager.IMPORTANCE_DEFAULT,
+        manager.createNotificationChannel(
+            NotificationChannel(
+                CHANNEL_ORDERS,
+                context.getString(R.string.notification_channel_orders),
+                NotificationManager.IMPORTANCE_DEFAULT,
+            ),
         )
-        manager.createNotificationChannel(channel)
+        manager.createNotificationChannel(
+            NotificationChannel(
+                CHANNEL_CHAT,
+                context.getString(R.string.notification_channel_chat),
+                NotificationManager.IMPORTANCE_DEFAULT,
+            ),
+        )
     }
 
     @SuppressLint("MissingPermission")
     fun showOrderShipped(orderId: Long, orderNumber: String) {
         if (!hasNotificationPermission()) return
-        ensureChannel()
+        ensureChannels()
         val intent = Intent(Intent.ACTION_VIEW, DeepLinkParser.orderUri(orderId)).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
@@ -54,7 +63,7 @@ class NotificationHelper @Inject constructor(
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(context, CHANNEL_ORDERS)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(context.getString(R.string.notification_order_shipped_title))
             .setContentText(
@@ -104,7 +113,7 @@ class NotificationHelper @Inject constructor(
         body: String,
     ) {
         if (!hasNotificationPermission()) return
-        ensureChannel()
+        ensureChannels()
         val intent = Intent(Intent.ACTION_VIEW, DeepLinkParser.orderUri(orderId)).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
@@ -114,7 +123,7 @@ class NotificationHelper @Inject constructor(
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(context, CHANNEL_ORDERS)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(body)
@@ -124,7 +133,79 @@ class NotificationHelper @Inject constructor(
         NotificationManagerCompat.from(context).notify(notificationId, notification)
     }
 
+    @SuppressLint("MissingPermission")
+    override fun showChatMessage(localConversationId: Long, title: String, body: String) {
+        if (!hasNotificationPermission()) return
+        ensureChannels()
+        val intent = Intent(Intent.ACTION_VIEW, DeepLinkParser.chatUri(localConversationId)).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val notificationId = (localConversationId * 10 + 4).toInt()
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            notificationId,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val notification = NotificationCompat.Builder(context, CHANNEL_CHAT)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+        NotificationManagerCompat.from(context).notify(notificationId, notification)
+    }
+
+    @SuppressLint("MissingPermission")
+    override fun showChatMessageFallback(title: String, body: String) {
+        if (!hasNotificationPermission()) return
+        ensureChannels()
+        val notification = NotificationCompat.Builder(context, CHANNEL_CHAT)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setAutoCancel(true)
+            .build()
+        NotificationManagerCompat.from(context).notify(FALLBACK_CHAT_NOTIFICATION_ID, notification)
+    }
+
+    @SuppressLint("MissingPermission")
+    override fun showOrderUpdate(
+        orderId: Long,
+        title: String,
+        body: String,
+        kind: com.zoti321.c2cmarket.domain.scheduler.OrderNotificationKind,
+    ) {
+        val notificationId = when (kind) {
+            com.zoti321.c2cmarket.domain.scheduler.OrderNotificationKind.PENDING_SELLER ->
+                (orderId * 10 + 1).toInt()
+            com.zoti321.c2cmarket.domain.scheduler.OrderNotificationKind.CONFIRMED_BUYER ->
+                (orderId * 10 + 2).toInt()
+            com.zoti321.c2cmarket.domain.scheduler.OrderNotificationKind.COMPLETED ->
+                (orderId * 10 + 3).toInt()
+            else -> orderId.toInt()
+        }
+        showOrderNotification(orderId, notificationId, title, body)
+    }
+
+    @SuppressLint("MissingPermission")
+    override fun showOrderUpdateFallback(title: String, body: String) {
+        if (!hasNotificationPermission()) return
+        ensureChannels()
+        val notification = NotificationCompat.Builder(context, CHANNEL_ORDERS)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setAutoCancel(true)
+            .build()
+        NotificationManagerCompat.from(context).notify(FALLBACK_ORDER_NOTIFICATION_ID, notification)
+    }
+
     companion object {
-        const val CHANNEL_ID = "order_updates"
+        const val CHANNEL_ORDERS = "order_updates"
+        const val CHANNEL_CHAT = "chat_messages"
+        private const val FALLBACK_CHAT_NOTIFICATION_ID = 9001
+        private const val FALLBACK_ORDER_NOTIFICATION_ID = 9002
     }
 }
