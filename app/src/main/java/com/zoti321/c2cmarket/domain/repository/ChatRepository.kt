@@ -5,6 +5,7 @@ import com.zoti321.c2cmarket.domain.model.Message
 import com.zoti321.c2cmarket.domain.model.Product
 import kotlinx.coroutines.flow.Flow
 
+@Suppress("TooManyFunctions")
 interface ChatRepository {
     fun observeConversationsAsBuyer(): Flow<List<Conversation>>
 

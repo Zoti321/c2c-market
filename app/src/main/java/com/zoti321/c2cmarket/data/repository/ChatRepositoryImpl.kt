@@ -43,6 +43,7 @@ import kotlinx.coroutines.withContext
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Singleton
+@Suppress("TooManyFunctions", "LongParameterList")
 class ChatRepositoryImpl @Inject constructor(
     database: C2CDatabase,
     private val authRepository: AuthRepository,

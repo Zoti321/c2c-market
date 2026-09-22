@@ -139,9 +139,12 @@ class FirestoreChatRemoteDataSource @Inject constructor(
 
     private fun com.google.firebase.firestore.DocumentSnapshot.toRemoteConversation(): RemoteConversation? {
         val remoteId = id
-        val buyerId = getString(FIELD_BUYER_ID) ?: return null
-        val sellerId = getString(FIELD_SELLER_ID) ?: return null
-        val productId = getLong(FIELD_PRODUCT_ID)?.toInt() ?: return null
+        val buyerId = getString(FIELD_BUYER_ID)
+        val sellerId = getString(FIELD_SELLER_ID)
+        val productId = getLong(FIELD_PRODUCT_ID)?.toInt()
+        if (buyerId == null || sellerId == null || productId == null) {
+            return null
+        }
         return RemoteConversation(
             remoteId = remoteId,
             buyerId = buyerId,

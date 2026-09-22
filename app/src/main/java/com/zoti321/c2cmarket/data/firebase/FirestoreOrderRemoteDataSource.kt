@@ -122,30 +122,22 @@ class FirestoreOrderRemoteDataSource @Inject constructor(
             FIELD_UPDATED_AT to System.currentTimeMillis(),
         )
 
-    @Suppress("UNCHECKED_CAST")
     private fun com.google.firebase.firestore.DocumentSnapshot.toRemoteOrder(): RemoteOrder? {
         val remoteId = id
-        val buyerId = getString(FIELD_BUYER_ID) ?: return null
-        val sellerId = getString(FIELD_SELLER_ID) ?: return null
-        val statusName = getString(FIELD_STATUS) ?: return null
-        val status = runCatching { OrderStatus.valueOf(statusName) }.getOrNull() ?: return null
-        val lineItemsRaw = get(FIELD_LINE_ITEMS) as? List<Map<String, Any>> ?: emptyList()
-        val lineItems = lineItemsRaw.mapNotNull { map ->
-            val productId = (map[FIELD_PRODUCT_ID] as? Number)?.toInt() ?: return@mapNotNull null
-            RemoteOrderLineItem(
-                productId = productId,
-                title = map[FIELD_TITLE] as? String ?: "",
-                unitPrice = (map[FIELD_UNIT_PRICE] as? Number)?.toDouble() ?: 0.0,
-                quantity = (map[FIELD_QUANTITY] as? Number)?.toInt() ?: 1,
-                imageUrl = map[FIELD_IMAGE_URL] as? String ?: "",
-            )
+        val buyerId = getString(FIELD_BUYER_ID)
+        val sellerId = getString(FIELD_SELLER_ID)
+        val status = getString(FIELD_STATUS)?.let { name ->
+            runCatching { OrderStatus.valueOf(name) }.getOrNull()
+        }
+        if (buyerId == null || sellerId == null || status == null) {
+            return null
         }
         return RemoteOrder(
             remoteId = remoteId,
             buyerId = buyerId,
             sellerId = sellerId,
             status = status,
-            lineItems = lineItems,
+            lineItems = parseLineItems(),
             totalAmount = getDouble(FIELD_TOTAL_AMOUNT) ?: 0.0,
             meetupLocation = getString(FIELD_MEETUP_LOCATION),
             buyerMeetupConfirmed = getBoolean(FIELD_BUYER_MEETUP_CONFIRMED) ?: false,
@@ -153,6 +145,25 @@ class FirestoreOrderRemoteDataSource @Inject constructor(
             createdAt = getLong(FIELD_CREATED_AT) ?: 0L,
             updatedAt = getLong(FIELD_UPDATED_AT) ?: 0L,
         )
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun com.google.firebase.firestore.DocumentSnapshot.parseLineItems(): List<RemoteOrderLineItem> {
+        val lineItemsRaw = get(FIELD_LINE_ITEMS) as? List<Map<String, Any>> ?: emptyList()
+        return lineItemsRaw.mapNotNull { map ->
+            val productId = (map[FIELD_PRODUCT_ID] as? Number)?.toInt()
+            if (productId == null) {
+                null
+            } else {
+                RemoteOrderLineItem(
+                    productId = productId,
+                    title = map[FIELD_TITLE] as? String ?: "",
+                    unitPrice = (map[FIELD_UNIT_PRICE] as? Number)?.toDouble() ?: 0.0,
+                    quantity = (map[FIELD_QUANTITY] as? Number)?.toInt() ?: 1,
+                    imageUrl = map[FIELD_IMAGE_URL] as? String ?: "",
+                )
+            }
+        }
     }
 
     companion object {

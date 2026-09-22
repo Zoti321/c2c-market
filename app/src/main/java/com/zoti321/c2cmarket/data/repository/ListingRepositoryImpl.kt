@@ -31,7 +31,7 @@ import kotlinx.coroutines.withContext
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Singleton
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LongParameterList")
 class ListingRepositoryImpl @Inject constructor(
     private val database: C2CDatabase,
     private val listingDao: ListingDao,
@@ -179,13 +179,12 @@ class ListingRepositoryImpl @Inject constructor(
             .filter { it.title.lowercase().contains(normalized) }
     }
 
-    private suspend fun resolveImageUri(imageUri: String, catalogId: Int?): Result<String> {
-        if (imageUri.startsWith("https://")) return Result.success(imageUri)
-        if (!imageUri.startsWith("content://")) return Result.success(imageUri)
-        if (!shouldUseRemote() || catalogId == null) {
-            return Result.failure(InvalidListingException("请先登录后再上传图片"))
-        }
-        return listingRemote.uploadListingImage(catalogId, Uri.parse(imageUri))
+    private suspend fun resolveImageUri(imageUri: String, catalogId: Int?): Result<String> = when {
+        imageUri.startsWith("https://") || !imageUri.startsWith("content://") ->
+            Result.success(imageUri)
+        !shouldUseRemote() || catalogId == null ->
+            Result.failure(InvalidListingException("请先登录后再上传图片"))
+        else -> listingRemote.uploadListingImage(catalogId, Uri.parse(imageUri))
     }
 
     private suspend fun syncListingRemote(entity: com.zoti321.c2cmarket.data.local.entity.ListingEntity) {

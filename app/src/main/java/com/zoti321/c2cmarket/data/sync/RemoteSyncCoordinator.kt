@@ -28,6 +28,7 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
 @Singleton
+@Suppress("LongParameterList")
 class RemoteSyncCoordinator @Inject constructor(
     private val authRepository: AuthRepository,
     private val firebaseAuthGateway: FirebaseAuthGateway,

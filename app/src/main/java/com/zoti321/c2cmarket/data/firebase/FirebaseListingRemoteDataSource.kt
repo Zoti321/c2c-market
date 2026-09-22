@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 @Singleton
+@Suppress("TooManyFunctions")
 class FirebaseListingRemoteDataSource @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val storage: FirebaseStorage,
@@ -105,11 +106,14 @@ class FirebaseListingRemoteDataSource @Inject constructor(
     )
 
     private fun com.google.firebase.firestore.DocumentSnapshot.toRemoteListing(): RemoteListing? {
-        val catalogId = id.toIntOrNull() ?: return null
-        val sellerId = getString(FIELD_SELLER_ID) ?: return null
+        val catalogId = id.toIntOrNull()
+        val sellerId = getString(FIELD_SELLER_ID)
         val statusName = getString(FIELD_STATUS) ?: ListingStatus.AVAILABLE.name
         val status = runCatching { ListingStatus.valueOf(statusName) }
             .getOrDefault(ListingStatus.AVAILABLE)
+        if (catalogId == null || sellerId == null) {
+            return null
+        }
         return RemoteListing(
             catalogId = catalogId,
             sellerId = sellerId,

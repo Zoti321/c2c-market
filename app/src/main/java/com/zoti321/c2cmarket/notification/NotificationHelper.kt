@@ -19,6 +19,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
+@Suppress("TooManyFunctions")
 class NotificationHelper @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : PushNotificationPresenter {

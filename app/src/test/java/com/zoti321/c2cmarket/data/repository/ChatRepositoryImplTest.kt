@@ -11,6 +11,7 @@ import com.zoti321.c2cmarket.domain.model.Rating
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestCoroutineScheduler
@@ -154,6 +155,8 @@ class ChatRepositoryImplTest {
         repository.sendMessage(conversation.id, "hello").getOrThrow()
         advanceTimeBy(ChatRepositoryImpl.MOCK_SELLER_REPLY_DELAY_MS)
         advanceUntilIdle()
+        // Room 查询在测试调度器之外执行，等到模拟回复任务结束再读库。
+        testScope.coroutineContext.job.children.toList().forEach { it.join() }
 
         val messages = repository.observeMessages(conversation.id).first()
         assertEquals(2, messages.size)

@@ -41,6 +41,7 @@ import kotlinx.coroutines.withContext
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Singleton
+@Suppress("TooManyFunctions", "LongParameterList")
 class OrderRepositoryImpl @Inject constructor(
     private val orderDao: OrderDao,
     private val cartDao: CartDao,
@@ -253,14 +254,15 @@ class OrderRepositoryImpl @Inject constructor(
     }
 
     private suspend fun syncMeetupConfirm(orderId: Long) {
-        val entity = orderDao.getById(orderId) ?: return
-        val remoteId = entity.remoteId ?: return
-        if (!shouldUseRemote()) return
-        orderRemote.syncMeetupConfirm(
-            remoteId,
-            entity.buyerMeetupConfirmed,
-            entity.sellerMeetupConfirmed,
-        )
+        val entity = orderDao.getById(orderId)
+        val remoteId = entity?.remoteId
+        if (entity != null && remoteId != null && shouldUseRemote()) {
+            orderRemote.syncMeetupConfirm(
+                remoteId,
+                entity.buyerMeetupConfirmed,
+                entity.sellerMeetupConfirmed,
+            )
+        }
     }
 
     private suspend fun shouldUseRemote(): Boolean =
