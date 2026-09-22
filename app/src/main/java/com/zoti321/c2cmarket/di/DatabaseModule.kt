@@ -12,6 +12,7 @@ import com.zoti321.c2cmarket.data.local.MIGRATION_6_7
 import com.zoti321.c2cmarket.data.local.MIGRATION_7_8
 import com.zoti321.c2cmarket.data.local.MIGRATION_8_9
 import com.zoti321.c2cmarket.data.local.MIGRATION_10_11
+import com.zoti321.c2cmarket.data.local.MIGRATION_11_12
 import com.zoti321.c2cmarket.data.local.MIGRATION_9_10
 import com.zoti321.c2cmarket.data.local.dao.AddressDao
 import com.zoti321.c2cmarket.data.local.dao.BrowseHistoryDao
@@ -51,6 +52,7 @@ object DatabaseModule {
                 MIGRATION_8_9,
                 MIGRATION_9_10,
                 MIGRATION_10_11,
+                MIGRATION_11_12,
             )
             .build()
 

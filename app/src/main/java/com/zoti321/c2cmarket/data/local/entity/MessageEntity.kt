@@ -1,5 +1,6 @@
 package com.zoti321.c2cmarket.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -17,6 +18,7 @@ import androidx.room.PrimaryKey
     ],
     indices = [
         Index(value = ["conversationId", "status"]),
+        Index(value = ["remoteId"]),
     ],
 )
 data class MessageEntity(
@@ -28,6 +30,7 @@ data class MessageEntity(
     val sentAt: Long?,
     val isRead: Boolean,
     val remoteId: String? = null,
+    @ColumnInfo(defaultValue = "'SYNCED'")
     val syncState: String = SyncStateValues.SYNCED,
 )
 
